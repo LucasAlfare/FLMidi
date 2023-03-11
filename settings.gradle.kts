@@ -1,6 +1,6 @@
 import java.net.URI
 
-rootProject.name = "kMIDI"
+rootProject.name = "FLMidi"
 
 sourceControl {
   gitRepository(URI("https://github.com/LucasAlfare/FLBinary")) {

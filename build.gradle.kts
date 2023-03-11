@@ -3,7 +3,7 @@ plugins {
     application
 }
 
-group = "org.example"
+group = "com.lucasalfare.flmidi"
 version = "1.0-SNAPSHOT"
 
 repositories {

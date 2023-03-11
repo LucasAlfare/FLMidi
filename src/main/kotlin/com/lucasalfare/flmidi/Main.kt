@@ -1,3 +1,5 @@
+package com.lucasalfare.flmidi
+
 import com.lucasalfare.flbinary.Reader
 import java.io.File
 
