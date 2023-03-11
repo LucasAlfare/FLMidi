@@ -6,8 +6,7 @@ enum class ControlEventType(val typeBytePrefix: Int = -1) {
   Empty,
   NoteOn(0b1001),
   NoteOff(0b1000),
-  SelectInstrument(0b1100),
-
+  SelectInstrument(0b1100)
 }
 
 class ControlEvent(
