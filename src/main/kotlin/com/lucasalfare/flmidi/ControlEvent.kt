@@ -6,7 +6,39 @@ enum class ControlEventType(val typeBytePrefix: Int = -1) {
   Empty,
   NoteOn(0b1001),
   NoteOff(0b1000),
-  SelectInstrument(0b1100)
+  SelectInstrument(0b1100),
+  KeyPressure(0b1010),
+  ChannelMode(0b1011),
+  ChannelPressure(0b1101),
+  PitchBend(1110)
+}
+
+enum class ChannelModeType(val typeByteSuffix: Int = -1) {
+  Empty,
+  BankSelect(0b00000000),
+  ModulationWheel(0b00000001),
+  BreathController(0b00000010),
+  FootController(0b00000100),
+  PortamentoTime(0b00000101),
+  DataEntrySliderMSB(0b00000110),
+  MainVolume(0b00000111),
+  Balance(0b00001000),
+  Pan(0b00001010),
+  ExpressionController(0b00001011),
+  EffectControl1(0b00001100),
+  EffectControl2(0b00001101),
+  GeneralPurposeController1(0b00010000),
+  GeneralPurposeController2(0b00010001),
+  GeneralPurposeController3(0b00010010),
+  GeneralPurposeController4(0b00010011),
+  //TODO LSB for controllers 0..31
+  DamperPedal(0b01000000),
+  Portamento(0b01000001),
+  SostenatoPedal(0b01000010),
+  SoftPedal(0b01000011),
+  LegatoFootswitch(0b01000100),
+  Hold2(0b01000101),
+
 }
 
 class ControlEvent(
