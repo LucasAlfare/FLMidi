@@ -83,8 +83,23 @@ class MetaEvent(
         this.data = "[no data]"
       }
 
+      MetaEventType.MidiChannelPrefix -> {
+        val dataLength = reader.read1Byte()
+        val currentEffectiveMidiChannel = reader.read1Byte()
+        this.data = currentEffectiveMidiChannel
+      }
+
+      MetaEventType.SequencerSpecificMetaEvent -> {
+        val dataLength = readVariableLength(reader)
+        val auxBytes = mutableListOf<Int>()
+        repeat(dataLength) {
+          auxBytes += reader.read1Byte()
+        }
+        this.data = auxBytes
+      }
+
       else -> {
-        error("Unhandled meta event type: ${this.type}")
+        error("Unhandled meta event type: ${this.type}[${this.type.typeByte}]")
       }
     }
   }

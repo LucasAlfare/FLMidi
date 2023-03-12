@@ -4,11 +4,14 @@ import com.lucasalfare.flbinary.Reader
 
 enum class ControlEventType(val typeBytePrefix: Int = -1) {
   Empty,
-  NoteOn(0b1001),
+
   NoteOff(0b1000),
-  SelectInstrument(0b1100),
+  NoteOn(0b1001),
   KeyPressure(0b1010),
+
   ChannelMode(0b1011),
+
+  SelectInstrument(0b1100),
   ChannelPressure(0b1101),
   PitchBend(1110)
 }
@@ -65,8 +68,27 @@ class ControlEvent(
         this.data = listOf(noteNumber, noteVelocity)
       }
 
+      ControlEventType.ChannelMode -> {
+        val channelModeTypeCode = reader.read1Byte()
+        val channelModeArg1 = reader.read1Byte()
+        val channelModeArg2 = reader.read1Byte()
+        this.data = arrayOf(
+          channelModeTypeCode, channelModeArg1, channelModeArg2
+        )
+      }
+
+      ControlEventType.ChannelPressure -> {
+        val channelPressure = reader.read1Byte()
+        this.data = channelPressure
+      }
+
+      ControlEventType.PitchBend -> {
+        val pitchBend = reader.read1Byte()
+        this.data = pitchBend
+      }
+
       else -> {
-        error("Unhandled control event type: ${this.type}")
+        error("Unhandled control event type: ${this.type}[0b${Integer.toBinaryString(this.type.typeBytePrefix)}]")
       }
     }
   }

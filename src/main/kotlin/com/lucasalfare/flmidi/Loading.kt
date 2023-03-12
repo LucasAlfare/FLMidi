@@ -78,10 +78,14 @@ fun loadAndReadMidiFile(pathname: String = ""): MidiInfo {
 }
 
 fun exampleToBeRun() {
-  val info = loadAndReadMidiFile("test.mid")
+  val info = loadAndReadMidiFile("WelcomeToBucketheadland.mid")
   info.tracks.first().events.forEach {
-    if (it.category == EventCategory.Control) {
+    if (it.category == EventCategory.Meta) {
       println(it)
     }
   }
+}
+
+fun main() {
+  exampleToBeRun()
 }
