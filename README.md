@@ -30,3 +30,47 @@ implementation("com.lucasalfare.flbinary:FLMidi") {
   }
 }
 ```
+
+# How to use
+
+This library has been built using the concept that MIDI files are composed by `Events`. In a MIDI file we can find three categories of events: `MetaEvents` `ControlEvents` and `SystemExclusiveEvents`. All these events categories will always contain the following information:
+
+- `deltaTime`: indicates the current time diff that this event occuried;
+- `data`: the actual data associated tho this event.
+
+All events have their own possible events and each event has its own data. The meaning behind each data value can be found in the MIDI format file specification.
+
+Knowing this, this library is able to parse all those information to Kotlin code, and it exposes it to be used. For example, to check how many `Tracks` a MIDI file contains, we can run:
+```kotlin
+import com.lucasalfare.flmidi.loadAndReadMidiFile
+
+fun main() {
+  val myMidiInfo = loadAndReadMidiFile(
+    "path/to/my/great/midi/file.mid"
+  )
+  println(midiInfo.header.numTracks)
+}
+```
+
+Note that this root reading function returns a `MidiInfo` object, that contains other useful fields. For example, to check how many meta events are contained in a track, you can do:
+
+```kotlin
+import com.lucasalfare.flmidi.loadAndReadMidiFile
+
+fun main() {
+  val myMidiInfo = loadAndReadMidiFile(
+    "path/to/my/great/midi/file.mid"
+  )
+  println(
+    midiInfo
+      .header
+      .tracks
+      .first()
+      .events
+      .filter {
+        it.category == EventCategory.Meta
+      }
+      .size
+  )
+}
+```
