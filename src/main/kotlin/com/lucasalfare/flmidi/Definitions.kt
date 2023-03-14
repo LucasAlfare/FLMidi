@@ -1,26 +1,15 @@
+@file:OptIn(ExperimentalUnsignedTypes::class)
+
 package com.lucasalfare.flmidi
 
 import com.lucasalfare.flbinary.Reader
+import java.io.File
 
 enum class EventCategory {
   Control,
   SystemExclusive,
   Meta
 }
-
-data class Header(
-  var signature: String = "",
-  var length: Long = 0,
-  var midiFormat: Int = 0,
-  var numTracks: Int = 0,
-  var timeDivision: Int = 0
-)
-
-data class Track(
-  var signature: String = "",
-  var length: Long = 0,
-  var events: List<Event> = mutableListOf()
-)
 
 open class Event(
   var deltaTime: Int = 0,
@@ -50,4 +39,40 @@ fun readVariableLengthValue(reader: Reader): Int {
       return result
     }
   }
+}
+
+fun loadAndReadMidiFile(pathname: String): MidiInfo {
+  val file = File(pathname)
+
+  if (file.exists() && !file.isDirectory) {
+    val fileData = file.readBytes().toUByteArray()
+    val reader = Reader(fileData)
+    val info = MidiInfo()
+
+    val header = Header()
+    header.define(reader)
+
+    info.header = header
+
+    repeat(header.numTracks) {
+      val track = Track()
+      track.define(reader)
+
+      info.tracks += track
+    }
+
+    return info
+  }
+
+  return MidiInfo()
+}
+
+fun exampleToBeRun() {
+  loadAndReadMidiFile("test.mid").tracks.first().events.forEach {
+    println(it)
+  }
+}
+
+fun main() {
+  exampleToBeRun()
 }

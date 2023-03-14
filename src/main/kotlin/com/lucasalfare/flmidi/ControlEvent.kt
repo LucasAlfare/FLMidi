@@ -13,7 +13,7 @@ enum class ControlEventType(val typeBytePrefix: Int = -1) {
 
   SelectInstrument(0b1100),
   ChannelPressure(0b1101),
-  PitchBend(1110)
+  PitchBend(0b1110)
 }
 
 enum class ChannelModeType(val typeByteSuffix: Int = -1) {
@@ -40,8 +40,7 @@ enum class ChannelModeType(val typeByteSuffix: Int = -1) {
   SostenatoPedal(0b01000010),
   SoftPedal(0b01000011),
   LegatoFootswitch(0b01000100),
-  Hold2(0b01000101),
-
+  Hold2(0b01000101)
 }
 
 class ControlEvent(
@@ -72,8 +71,10 @@ class ControlEvent(
         val channelModeTypeCode = reader.read1Byte()
         val channelModeArg1 = reader.read1Byte()
         val channelModeArg2 = reader.read1Byte()
-        this.data = arrayOf(
-          channelModeTypeCode, channelModeArg1, channelModeArg2
+        this.data = listOf(
+          channelModeTypeCode,
+          channelModeArg1,
+          channelModeArg2
         )
       }
 
@@ -100,7 +101,7 @@ class ControlEvent(
 
 fun getControlEventTypeByCode(typeByte: Int = 0): ControlEventType {
   ControlEventType.values().forEach {
-    if (it.typeBytePrefix == (typeByte ushr 4)) {
+    if ((typeByte ushr 4) == it.typeBytePrefix) {
       return it
     }
   }

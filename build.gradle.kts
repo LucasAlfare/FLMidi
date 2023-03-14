@@ -12,7 +12,7 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
-    implementation("com.lucasalfare.flbinary:FLBinary:v1.2")
+    implementation("com.lucasalfare.flbinary:FLBinary:v1.3.2")
 }
 
 tasks.test {
