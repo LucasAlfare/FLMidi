@@ -28,8 +28,9 @@ fun loadAndReadMidiFile(pathname: String = ""): MidiInfo {
       currentTrack.length = reader.read4Bytes()
 
       for (i in 0..currentTrack.length) {
-        val currentDeltaTime = readVariableLength(reader)
+        val currentDeltaTime = readVariableLengthValue(reader)
         val currentStatusByte = reader.read1Byte()
+        println("currentDeltaTime=$currentDeltaTime, currentStatusByte=${Integer.toHexString(currentStatusByte)}")
 
         when (currentStatusByte) {
           0xff -> { // meta event

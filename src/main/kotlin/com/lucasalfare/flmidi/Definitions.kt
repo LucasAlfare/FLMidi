@@ -33,7 +33,7 @@ data class MidiInfo(
   var tracks: List<Track> = mutableListOf()
 )
 
-fun readVariableLength(reader: Reader): Int {
+fun readVariableLengthValue(reader: Reader): Int {
   var result = 0
   val mask = 0b0111_1111
   val extractedBytes = mutableListOf<Int>()

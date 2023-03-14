@@ -36,7 +36,7 @@ class MetaEvent(
       MetaEventType.Lyric,
       MetaEventType.Marker,
       MetaEventType.CuePoint -> {
-        val textLength = readVariableLength(reader)
+        val textLength = readVariableLengthValue(reader)
         this.data = reader.readString(textLength)!!
       }
 
@@ -90,7 +90,7 @@ class MetaEvent(
       }
 
       MetaEventType.SequencerSpecificMetaEvent -> {
-        val dataLength = readVariableLength(reader)
+        val dataLength = readVariableLengthValue(reader)
         val auxBytes = mutableListOf<Int>()
         repeat(dataLength) {
           auxBytes += reader.read1Byte()
