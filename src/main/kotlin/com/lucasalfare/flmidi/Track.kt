@@ -13,7 +13,7 @@ data class Track(
     var previousStatus = 0
 
     while (true) {
-      val deltaTime = readVariableLengthValue(reader)
+      val deltaTime = reader.readVariableLengthValue()
       var currentStatus = reader.read1Byte()
 
       /*
