@@ -23,20 +23,15 @@ data class MidiInfo(
 )
 
 fun readVariableLengthValue(reader: Reader): Int {
-  var result = 0
   val mask = 0b0111_1111
-  val extractedBytes = mutableListOf<Int>()
+  var resultNumber = 0
+  var currentByte: Int
 
   while (true) {
-    val currentByte = reader.read1Byte()
-
-    extractedBytes += currentByte and mask
-
+    currentByte = reader.read1Byte()
+    resultNumber = (resultNumber shl 7) or (currentByte and mask)
     if ((currentByte ushr 7) == 0) {
-      extractedBytes.forEach {
-        result = (result shl 7) or it
-      }
-      return result
+      return resultNumber
     }
   }
 }
