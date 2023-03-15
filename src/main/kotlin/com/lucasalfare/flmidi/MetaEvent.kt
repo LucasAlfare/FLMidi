@@ -99,7 +99,7 @@ class MetaEvent(
       }
 
       else -> {
-        error("Unhandled meta event type: ${this.type}[${this.type.typeByte}]")
+        error("Unhandled meta event type: ${this.type}[${this.type.typeByte.toHexString()}]")
       }
     }
   }

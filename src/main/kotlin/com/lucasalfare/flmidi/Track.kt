@@ -12,10 +12,30 @@ data class Track(
     length = reader.read4Bytes()
     var previousStatus = 0
 
-    for (i in 0..length) {
+    while (true) {
       val deltaTime = readVariableLengthValue(reader)
-      val nextByte = reader.read1Byte()
-      var currentStatus = nextByte
+      var currentStatus = reader.read1Byte()
+
+      /*
+      If this condition is [true] then we are this current
+      byte is part of a sequence of a "running status" mode.
+
+      This means that all next stats/events will be the
+      same until this condition turns to [false].
+
+      Also, when in a running status the actual current
+      byte will not be representing a control event. Instead,
+      it should be part of the next information. So due this
+      case we should "backtrack" the current reading position
+      to the previous one.
+
+      This will make the reading sequence works correctly,
+      respecting the running status specification.
+       */
+      if (currentStatus ushr 7 == 0) {
+        currentStatus = previousStatus
+        reader.position--
+      }
 
       when (currentStatus) {
         0xFF -> { // META
@@ -26,29 +46,28 @@ data class Track(
           event.type = getMetaEventTypeByCode(type)
           event.defineData(reader)
 
+          events += event
+
           if (event.type == MetaEventType.EndOfTrack) {
             break
           }
-
-          events += event
         }
 
-        0xF0, 0xF7 -> { // Sysex
-        }
+        0xF0, 0xF7 -> { /* TODO: Sysex */ }
 
         else -> { // CONTROL
-          // check for a running status
-          if (currentStatus ushr 7 == 0) {
-            currentStatus = previousStatus
-          } else {
-            currentStatus = nextByte
-            previousStatus = currentStatus
-          }
+          // updates running status "mode"
+          previousStatus = currentStatus
 
           val event = ControlEvent()
           event.deltaTime = deltaTime
           event.category = EventCategory.Control
           event.type = getControlEventTypeByCode(currentStatus)
+
+          /*
+          The channel information lives in the first four bits.
+          To extract then, just mask the value with 0b1111.
+           */
           event.targetChannel = currentStatus and 0b1111
           event.defineData(reader)
 

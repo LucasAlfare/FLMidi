@@ -68,8 +68,14 @@ fun loadAndReadMidiFile(pathname: String): MidiInfo {
 }
 
 fun exampleToBeRun() {
-  loadAndReadMidiFile("example.mid").tracks.first().events.forEach {
-    println(it)
+  val info = loadAndReadMidiFile("example.mid")
+  println("Header info:\n\t${info.header}")
+  println("-------- -------- -------- --------")
+  info.tracks.forEachIndexed { index, track ->
+    println("--> Debugging events from track of index $index:")
+    track.events.forEach {
+      println("\t$it")
+    }
   }
 }
 

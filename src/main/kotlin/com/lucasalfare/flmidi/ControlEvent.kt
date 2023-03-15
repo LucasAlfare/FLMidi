@@ -89,7 +89,7 @@ class ControlEvent(
       }
 
       else -> {
-        error("Unhandled control event type: ${this.type}[0b${Integer.toBinaryString(this.type.typeBytePrefix)}]")
+        error("Unhandled control event type: ${this.type}[${this.type.typeBytePrefix.toBinaryString()}]")
       }
     }
   }
