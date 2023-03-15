@@ -66,8 +66,9 @@ fun exampleToBeRun() {
   val info = loadAndReadMidiFile("example.mid")
   println("Header info:\n\t${info.header}")
   println("-------- -------- -------- --------")
-  info.tracks.forEachIndexed { index, track ->
-    println("--> Debugging events from track of index $index:")
+  info.tracks.forEachIndexed { _, track ->
+    println("Current track info:\n\t${track}")
+    println("--> Events of this track:")
     track.events.forEach {
       println("\t$it")
     }
