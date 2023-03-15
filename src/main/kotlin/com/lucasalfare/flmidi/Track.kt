@@ -7,6 +7,11 @@ data class Track(
   var length: Long = 0,
   var events: List<Event> = mutableListOf()
 ) {
+
+  /**
+   * Main function to define (read) the "current" track
+   * information from the raw file bytes.
+   */
   fun define(reader: Reader) {
     signature = reader.readString(4)!!
     length = reader.read4Bytes()
