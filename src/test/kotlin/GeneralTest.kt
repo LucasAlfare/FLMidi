@@ -26,7 +26,7 @@ class GeneralTest {
       val expected = it[0] as Int
       val data = it[1] as ByteArray
       val reader = Reader(data.toUByteArray())
-      assertEquals(expected, readVariableLengthValue(reader))
+      assertEquals(expected, reader.readVariableLengthValue())
     }
   }
 }
