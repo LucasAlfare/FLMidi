@@ -68,7 +68,7 @@ fun loadAndReadMidiFile(pathname: String): MidiInfo {
 }
 
 fun exampleToBeRun() {
-  loadAndReadMidiFile("test.mid").tracks.first().events.forEach {
+  loadAndReadMidiFile("example.mid").tracks.first().events.forEach {
     println(it)
   }
 }
