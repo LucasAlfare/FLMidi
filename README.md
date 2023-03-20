@@ -15,7 +15,7 @@ Currently is in a rough development phase but should be fine to use in some push
 
 ```kotlin
 sourceControl {
-  gitRepository(URI("https://github.com/LucasAlfare/FLMidi")) {
+  gitRepository(java.net.URI("https://github.com/LucasAlfare/FLMidi")) {
     producesModule("com.lucasalfare.flbinary:FLMidi")
   }
 }
