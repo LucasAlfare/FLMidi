@@ -110,7 +110,7 @@ class MetaEvent(
 }
 
 fun getMetaEventTypeByCode(typeByte: Int = 0): MetaEventType {
-  MetaEventType.values().forEach {
+  MetaEventType.entries.forEach {
     if (it.typeByte == typeByte) {
       return it
     }
