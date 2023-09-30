@@ -1,6 +1,7 @@
 plugins {
   kotlin("jvm") version "1.9.0"
   application
+  `maven-publish`
 }
 
 group = "com.lucasalfare.flmidi"
@@ -26,4 +27,15 @@ kotlin {
 
 application {
   mainClass.set("MainKt")
+}
+
+/**
+ * Helper block to configure Maven Publishing.
+ */
+publishing {
+  publications {
+    create<MavenPublication>("Maven") {
+      from(components["kotlin"])
+    }
+  }
 }
