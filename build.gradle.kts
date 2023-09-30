@@ -8,11 +8,12 @@ version = "1.0-SNAPSHOT"
 
 repositories {
   mavenCentral()
+  maven("https://jitpack.io")
 }
 
 dependencies {
   testImplementation(kotlin("test"))
-  implementation("com.lucasalfare.flbinary:FLBinary:v1.3.2")
+  implementation("com.github.LucasAlfare:FLBinary:1.5")
 }
 
 tasks.test {
