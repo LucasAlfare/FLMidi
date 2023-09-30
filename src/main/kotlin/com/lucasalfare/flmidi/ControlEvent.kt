@@ -100,7 +100,7 @@ class ControlEvent(
 }
 
 fun getControlEventTypeByCode(typeByte: Int = 0): ControlEventType {
-  ControlEventType.values().forEach {
+  ControlEventType.entries.forEach {
     if ((typeByte ushr 4) == it.typeBytePrefix) {
       return it
     }
