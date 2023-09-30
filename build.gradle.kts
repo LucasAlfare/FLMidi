@@ -1,28 +1,28 @@
 plugins {
-    kotlin("jvm") version "1.8.0"
-    application
+  kotlin("jvm") version "1.9.0"
+  application
 }
 
 group = "com.lucasalfare.flmidi"
 version = "1.0-SNAPSHOT"
 
 repositories {
-    mavenCentral()
+  mavenCentral()
 }
 
 dependencies {
-    testImplementation(kotlin("test"))
-    implementation("com.lucasalfare.flbinary:FLBinary:v1.3.2")
+  testImplementation(kotlin("test"))
+  implementation("com.lucasalfare.flbinary:FLBinary:v1.3.2")
 }
 
 tasks.test {
-    useJUnitPlatform()
+  useJUnitPlatform()
 }
 
 kotlin {
-    jvmToolchain(8)
+  jvmToolchain(8)
 }
 
 application {
-    mainClass.set("MainKt")
+  mainClass.set("MainKt")
 }
