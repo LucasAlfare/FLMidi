@@ -22,15 +22,15 @@ data class Track(
       var currentStatus = reader.read1Byte()
 
       /*
-      If this condition is [true] then we are this current
-      byte is part of a sequence of a "running status" mode.
+      If this condition is [true] then this current byte is
+      part of a sequence of a "running status" mode.
 
       This means that all next stats/events will be the
       same until this condition turns to [false].
 
-      Also, when in a running status the actual current
+      Also, when in a running status mode the actual current
       byte will not be representing a control event. Instead,
-      it should be part of the next information. So due this
+      it should be part of the next information. So due to this
       case we should "backtrack" the current reading position
       to the previous one.
 
