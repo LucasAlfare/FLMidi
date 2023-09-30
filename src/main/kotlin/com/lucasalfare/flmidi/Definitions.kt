@@ -39,9 +39,7 @@ fun Reader.readVariableLengthValue(): Int {
   while (true) {
     currentByte = this.read1Byte()
     resultNumber = (resultNumber shl 7) or (currentByte and mask)
-    if ((currentByte ushr 7) == 0) {
-      return resultNumber
-    }
+    if ((currentByte ushr 7) == 0) return resultNumber
   }
 }
 
