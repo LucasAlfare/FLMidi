@@ -43,45 +43,34 @@ fun Reader.readVariableLengthValue(): Int {
   }
 }
 
+@OptIn(ExperimentalUnsignedTypes::class)
 fun loadAndReadMidiFile(pathname: String): MidiInfo {
   val file = File(pathname)
 
   if (file.exists() && !file.isDirectory) {
     val fileData = file.readBytes().toUByteArray()
-    val reader = Reader(fileData)
-    val info = MidiInfo()
 
-    val header = Header()
-    header.define(reader)
+    if (fileData.isNotEmpty()) {
+      val reader = Reader(fileData)
+      val info = MidiInfo()
 
-    info.header = header
+      val header = Header()
+      header.define(reader)
 
-    repeat(header.numTracks) {
-      val track = Track()
-      track.define(reader)
+      info.header = header
 
-      info.tracks += track
-    }
+      repeat(header.numTracks) {
+        val track = Track()
+        track.define(reader)
 
-    return info
-  }
+        info.tracks += track
+      }
 
-  return MidiInfo()
-}
-
-fun exampleToBeRun() {
-  val info = loadAndReadMidiFile("example.mid")
-  println("Header info:\n\t${info.header}")
-  println("-------- -------- -------- --------")
-  info.tracks.forEachIndexed { _, track ->
-    println("Current track info:\n\t${track}")
-    println("--> Events of this track:")
-    track.events.forEach {
-      println("\t$it")
+      return info
+    } else {
+      throw FLMidiException("The file of the passed path is empty of data.")
     }
   }
-}
 
-fun main() {
-  exampleToBeRun()
+  throw FLMidiException("Could not to read the supplied file at the specified path.")
 }
