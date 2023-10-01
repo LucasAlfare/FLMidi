@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.lucasalfare.flmidi"
-version = "v1.0.1"
+version = "v1.0.2"
 
 repositories {
   mavenCentral()
