@@ -16,7 +16,7 @@ Currently is in a rough development phase but should be fine to use in some push
 ```kotlin
 sourceControl {
   gitRepository(java.net.URI("https://github.com/LucasAlfare/FLMidi")) {
-    producesModule("com.lucasalfare.flbinary:FLMidi")
+    producesModule("com.lucasalfare.flmidi:FLMidi")
   }
 }
 ```
@@ -24,7 +24,7 @@ sourceControl {
 After, add this to your `build.gradle.kts` to target the `master` branch of this repository:
 
 ```kotlin
-implementation("com.lucasalfare.flbinary:FLMidi") {
+implementation("com.lucasalfare.flmidi:FLMidi") {
   version {
     branch = "master"
   }
