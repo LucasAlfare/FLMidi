@@ -14,7 +14,7 @@ repositories {
 
 dependencies {
   testImplementation(kotlin("test"))
-  implementation("com.github.LucasAlfare:FLBinary:1.5")
+  implementation("com.github.LucasAlfare:FLBinary:v1.5")
 }
 
 tasks.test {
