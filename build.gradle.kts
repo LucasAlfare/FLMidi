@@ -26,7 +26,7 @@ kotlin {
 }
 
 application {
-  mainClass.set("MainKt")
+  mainClass.set("com.lucasalfare.flmidi.MainKt")
 }
 
 /**
