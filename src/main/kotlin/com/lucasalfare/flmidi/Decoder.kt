@@ -46,27 +46,21 @@ data class MyHeader(
 
 @OptIn(ExperimentalUnsignedTypes::class)
 fun main() {
-  val file = File("failable_example.mid")
+  val file = File("midi_format_1_example.mid")
   if (file.exists() && !file.isDirectory) {
     val reader = Reader(file.readBytes().toUByteArray())
 
-    val headerSignature = reader.readString(4)
-    val headerLength = reader.read4Bytes()
-    val headerMidiFormat = reader.read2Bytes()
-    val headerNumTracks = reader.read2Bytes()
-    val headerTimeDivision = reader.read2Bytes()
-
     val myHeader = MyHeader(
-      headerSignature ?: "no signature",
-      headerLength,
-      headerMidiFormat,
-      headerNumTracks,
-      headerTimeDivision
+      signature = reader.readString(4) ?: "no signature",
+      length = reader.read4Bytes(),
+      midiFormat = reader.read2Bytes(),
+      numTracks = reader.read2Bytes(),
+      timeDivision = reader.read2Bytes()
     )
 
     println(myHeader)
 
-    println("~Warning: this is a midi file in format $headerMidiFormat~")
+    println("~Warning: this is a midi file in format ${myHeader.midiFormat}!~")
 
     val tracks = mutableListOf<MyTrack>()
 
@@ -228,6 +222,8 @@ fun main() {
         }
       }
       tracks += MyTrack(trackSignature ?: "no signature", trackLength, trackEvents)
+
+      break
     }
 
     tracks.forEachIndexed { index, myTrack ->
@@ -235,4 +231,26 @@ fun main() {
       println(myTrack)
     }
   }
+}
+
+@OptIn(ExperimentalUnsignedTypes::class)
+fun specFileFormat1() {
+  val s =
+    "4D 54 68 64 00 00 00 06 00 01 00 04 00 60 4D 54 72 6B 00 00 00 14 FF 58 04 04 02 18 08 FF 51 03 07 A1 20 FF 2F 00 4D 54 72 6B 00 00 00 10 C0 05 90 4C 20 4C 00 FF 2F 00 4D 54 72 6B 00 00 00 0F C1 2E 91 43 40 43 00 FF 2F 00 4D 54 72 6B 00 00 00 15 C2 46 92 30 60 3C 60 30 00 3C 00 FF 2F 00"
+      .replace("\t", "")
+      .replace("\n", " ")
+      .replace("  ", " ")
+      .trim()
+      .split(" ")
+  println(s)
+
+  val bytes = UByteArray(s.size)
+  s.forEachIndexed { index, b ->
+    if (b.isNotEmpty()) {
+      bytes[index] = Integer.parseInt(b, 16).toUByte()
+    }
+  }
+
+  val f = File("midi_format_1_example.mid")
+  f.writeBytes(bytes.toByteArray())
 }
