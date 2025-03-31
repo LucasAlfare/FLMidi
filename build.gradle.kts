@@ -1,18 +1,16 @@
 plugins {
-  kotlin("jvm") version "2.0.0"
+  alias(libs.plugins.kotlin.jvm)
   application
   `maven-publish`
 }
 
 group = "com.lucasalfare.flmidi"
-version = "v1.0.3"
+version = "v2.0.0"
 
-/*
 repositories {
   mavenCentral()
   maven("https://jitpack.io")
 }
-*/
 
 dependencies {
   implementation("com.github.LucasAlfare:FLBinary:v1.6")
