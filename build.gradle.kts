@@ -1,5 +1,6 @@
 plugins {
   alias(libs.plugins.kotlin.jvm)
+  alias(libs.plugins.kotlin.serialization)
   application
   `maven-publish`
 }
@@ -14,6 +15,7 @@ repositories {
 
 dependencies {
   implementation("com.github.LucasAlfare:FLBinary:v1.6")
+  implementation(libs.kotlinx.serialization.json)
   testImplementation(kotlin("test"))
 }
 
