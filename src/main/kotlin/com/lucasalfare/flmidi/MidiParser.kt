@@ -7,100 +7,103 @@ import java.io.File
 import kotlin.math.pow
 
 /**
- * General MIDI event types and constants.
+ * Enumeration representing the high-level MIDI event categories.
  *
- * These constants represent the different types of events in a MIDI file.
- * The format follows the Standard MIDI File (SMF) specification.
+ * @property code The byte code associated with this event type.
  */
+enum class EventType(val code: Int) {
+  /**
+   * Meta event indicator (always 0xFF).
+   */
+  Meta(0xFF),
 
-/** Meta event type indicator (always 0xFF). */
-const val META_EVENT = 0xFF
+  /**
+   * System Exclusive event start indicator (always 0xF0).
+   */
+  SystemExclusive(0xF0),
 
-/** System Exclusive event start indicator (always 0xF0). */
-const val SYSTEM_EXCLUSIVE_EVENT = 0xF0
+  /**
+   * System Exclusive event escape indicator (always 0xF7).
+   */
+  SystemExclusiveEscape(0xF7);
 
-/** System Exclusive event escape indicator (always 0xF7). */
-const val SYSTEM_EXCLUSIVE_ESCAPE_EVENT = 0xF7
+  companion object {
+    /**
+     * Retrieves the corresponding [EventType] for the given code.
+     *
+     * @param code The code to lookup.
+     * @return The matching [EventType] if found, otherwise null.
+     */
+    fun fromCode(code: Int): EventType? = entries.find { it.code == code }
+  }
+}
 
 /**
- * Meta-event type constants.
+ * Enumeration representing the types of meta events in a MIDI file.
  *
- * Each constant represents a specific type of meta-event, which are used to store
- * non-MIDI performance data such as tempo, time signature, and textual information.
+ * @property code The byte code associated with this meta event type.
  */
+enum class MetaEventType(val code: Int) {
+  SequenceNumber(0x00),
+  TextEvent(0x01),
+  CopyrightNotice(0x02),
+  TrackName(0x03),
+  InstrumentName(0x04),
+  Lyric(0x05),
+  Marker(0x06),
+  CuePoint(0x07),
+  MidiChannelPrefix(0x20),
+  SetTempo(0x51),
+  SmpteOffset(0x54),
+  TimeSignature(0x58),
+  KeySignature(0x59),
+  SequencerSpecific(0x7F),
+  EndOfTrack(0x2F),
 
-/** Meta event: Sequence Number (0x00). */
-const val SEQUENCE_NUMBER = 0x00
+  /**
+   * Represents an unknown meta event type.
+   */
+  Unknown(-1);
 
-/** Meta event: Text Event (0x01). */
-const val TEXT_EVENT = 0x01
-
-/** Meta event: Copyright Notice (0x02). */
-const val COPYRIGHT_NOTICE = 0x02
-
-/** Meta event: Track Name (0x03). */
-const val TRACK_NAME = 0x03
-
-/** Meta event: Instrument Name (0x04). */
-const val INSTRUMENT_NAME = 0x04
-
-/** Meta event: Lyric (0x05). */
-const val LYRIC = 0x05
-
-/** Meta event: Marker (0x06). */
-const val MARKER = 0x06
-
-/** Meta event: Cue Point (0x07). */
-const val CUE_POINT = 0x07
-
-/** Meta event: MIDI Channel Prefix (0x20). */
-const val MIDI_CHANNEL_PREFIX = 0x20
-
-/** Meta event: End of Track (0x2F). */
-const val END_OF_TRACK = 0x2F
-
-/** Meta event: Set Tempo (0x51). */
-const val SET_TEMPO = 0x51
-
-/** Meta event: SMPTE Offset (0x54). */
-const val SMPTE_OFFSET = 0x54
-
-/** Meta event: Time Signature (0x58). */
-const val TIME_SIGNATURE = 0x58
-
-/** Meta event: Key Signature (0x59). */
-const val KEY_SIGNATURE = 0x59
-
-/** Meta event: Sequencer Specific (0x7F). */
-const val SEQUENCER_SPECIFIC = 0x7F
+  companion object {
+    /**
+     * Retrieves the corresponding [MetaEventType] for the given code.
+     *
+     * @param code The code to lookup.
+     * @return The matching [MetaEventType] if found; otherwise, [Unknown].
+     */
+    fun fromCode(code: Int): MetaEventType = entries.find { it.code == code } ?: Unknown
+  }
+}
 
 /**
- * Control event type constants.
+ * Enumeration representing the types of MIDI control (channel) events.
  *
- * These constants use only the 4 most significant bits from the status byte.
- * They represent various MIDI performance messages.
+ * @property code The 4-bit code associated with this control event type.
  */
+enum class ControlEventType(val code: Int) {
+  NoteOff(0b1000),
+  NoteOn(0b1001),
+  PolyphonicKeyPressure(0b1010),
+  ControlChange(0b1011),
+  ProgramChange(0b1100),
+  ChannelPressure(0b1101),
+  PitchBend(0b1110);
 
-/** Control event: Note Off (0b1000). */
-const val NOTE_OFF = 0b1000
-
-/** Control event: Note On (0b1001). */
-const val NOTE_ON = 0b1001
-
-/** Control event: Polyphonic Key Pressure (0b1010). */
-const val POLYPHONIC_KEY_PRESSURE = 0b1010
-
-/** Control event: Control Change (0b1011). */
-const val CONTROL_CHANGE = 0b1011
-
-/** Control event: Program Change (0b1100). */
-const val PROGRAM_CHANGE = 0b1100
-
-/** Control event: Channel Pressure (0b1101). */
-const val CHANNEL_PRESSURE = 0b1101
-
-/** Control event: Pitch Bend (0b1110). */
-const val PITCH_BEND = 0b1110
+  companion object {
+    /**
+     * Retrieves the corresponding [ControlEventType] for the given 4-bit code.
+     *
+     * @param code The 4-bit code to lookup.
+     * @return The matching [ControlEventType].
+     * @throws IllegalArgumentException If the code does not correspond to a known control event.
+     */
+    fun fromCode(code: Int): ControlEventType =
+      entries.find { it.code == code } ?: throw IllegalArgumentException(
+        "Unknown control event type: ${code.toString(16)}"
+      )
+  }
+}
 
 /**
  * Base class for all MIDI events.
@@ -110,26 +113,26 @@ open class Event
 /**
  * Data class representing a meta event in a MIDI file.
  *
- * @property eventType The type of meta event (e.g., TEXT_EVENT, SET_TEMPO).
+ * @property type The type of meta event (e.g., [MetaEventType.TextEvent], [MetaEventType.SetTempo]).
  * @property deltaTime The delta time before this event occurs.
- * @property data The data payload for this event, its type depends on the event.
+ * @property data The data payload for this event; its type depends on the event.
  */
 data class MetaEvent(
-  val eventType: Int,
+  val type: MetaEventType,
   val deltaTime: Int,
   val data: Any
 ) : Event()
 
 /**
- * Data class representing a control event (channel event) in a MIDI file.
+ * Data class representing a control (channel) event in a MIDI file.
  *
- * @property type The type of control event (e.g., NOTE_ON, CONTROL_CHANGE).
+ * @property type The type of control event (e.g., [ControlEventType.NoteOn], [ControlEventType.ControlChange]).
  * @property delta The delta time before this event occurs.
  * @property data The data payload for this event.
- * @property targetChannel The MIDI channel this event is associated with.
+ * @property targetChannel The MIDI channel associated with this event.
  */
 data class ControlEvent(
-  val type: Int,
+  val type: ControlEventType,
   val delta: Int,
   val data: Any,
   val targetChannel: Int
@@ -144,8 +147,8 @@ data class ControlEvent(
  * @property numTracks The number of track chunks in the MIDI file.
  * @property division The time division (ticks per quarter note or SMPTE format).
  *
- * The initializer validates that the header signature is correct and
- * that the number of tracks is appropriate for the given format.
+ * The initializer validates that the header signature is correct and that the number
+ * of tracks is appropriate for the given format.
  */
 data class Header(
   val chunkType: String,
@@ -156,8 +159,8 @@ data class Header(
 ) {
   init {
     require(chunkType == "MThd") { "Header chunk type signature is not 'MThd'!" }
-    if (format == 0) require(numTracks == 1)
-    else if (format == 1 || format == 2) require(numTracks >= 1)
+    if (format == 0) require(numTracks == 1) { "Format 0 MIDI files must contain exactly one track!" }
+    else if (format == 1 || format == 2) require(numTracks >= 1) { "MIDI file must contain at least one track!" }
   }
 }
 
@@ -168,8 +171,8 @@ data class Header(
  * @property length The length of the track chunk in bytes.
  * @property events The list of MIDI events contained in the track.
  *
- * The initializer validates that the track signature is correct,
- * the length is positive, and that there is at least one event.
+ * The initializer validates that the track signature is correct, the length is positive,
+ * and that there is at least one event.
  */
 data class Track(
   val type: String,
@@ -198,28 +201,37 @@ data class Midi(
  * Reads a meta event from the provided [reader] using the given [deltaTime].
  *
  * The function handles various meta event types and returns a [MetaEvent] containing
- * the event type, delta time, and associated data. Unknown meta events are also handled.
+ * the event type, delta time, and associated data. Unknown meta events are handled by
+ * assigning the [MetaEventType.Unknown] type.
  *
  * @param reader The [Reader] instance used to read bytes from the MIDI file.
  * @param deltaTime The delta time preceding the event.
  * @return The parsed [MetaEvent] object.
  */
 private fun readMetaEvent(reader: Reader, deltaTime: Int): MetaEvent {
-  return when (val type = reader.read1Byte()) {
-    SEQUENCE_NUMBER -> {
-      val dataLength = reader.readVariableLengthValue()
+  // Read the meta event type code and resolve it to the corresponding enum value.
+  val code = reader.read1Byte()
+  return when (val metaType = MetaEventType.fromCode(code)) {
+    MetaEventType.SequenceNumber -> {
+      reader.readVariableLengthValue() // data length (usually fixed)
       val sequenceNumber = reader.read2Bytes()
-      MetaEvent(type, deltaTime, sequenceNumber)
+      MetaEvent(metaType, deltaTime, sequenceNumber)
     }
 
-    TEXT_EVENT, COPYRIGHT_NOTICE, TRACK_NAME, INSTRUMENT_NAME, LYRIC, MARKER, CUE_POINT -> {
+    MetaEventType.TextEvent,
+    MetaEventType.CopyrightNotice,
+    MetaEventType.TrackName,
+    MetaEventType.InstrumentName,
+    MetaEventType.Lyric,
+    MetaEventType.Marker,
+    MetaEventType.CuePoint -> {
       val textLength = reader.readVariableLengthValue()
       val data = reader.readString(textLength) ?: ""
-      MetaEvent(type, deltaTime, data)
+      MetaEvent(metaType, deltaTime, data)
     }
 
-    TIME_SIGNATURE -> {
-      val numDataItems = reader.readVariableLengthValue()
+    MetaEventType.TimeSignature -> {
+      reader.readVariableLengthValue() // number of data items (should be 4)
       val upperSignatureValue = reader.read1Byte()
       val powerOfTwoToLowerValue = reader.read1Byte()
       val nMidiClocksInMetronomeClick = reader.read1Byte()
@@ -230,17 +242,17 @@ private fun readMetaEvent(reader: Reader, deltaTime: Int): MetaEvent {
         nMidiClocksInMetronomeClick,
         numberOf32ndNotesIn24MidiClocks
       )
-      MetaEvent(type, deltaTime, data)
+      MetaEvent(metaType, deltaTime, data)
     }
 
-    SET_TEMPO -> {
-      val numDataItems = reader.readVariableLengthValue()
+    MetaEventType.SetTempo -> {
+      reader.readVariableLengthValue() // number of data items (should be 3)
       val tempoInMicroseconds = reader.read3Bytes()
-      MetaEvent(type, deltaTime, tempoInMicroseconds)
+      MetaEvent(metaType, deltaTime, tempoInMicroseconds)
     }
 
-    SMPTE_OFFSET -> {
-      val dataLength = reader.readVariableLengthValue()
+    MetaEventType.SmpteOffset -> {
+      reader.readVariableLengthValue() // data length (should be 5)
       val data = listOf(
         reader.read1Byte(),
         reader.read1Byte(),
@@ -248,44 +260,45 @@ private fun readMetaEvent(reader: Reader, deltaTime: Int): MetaEvent {
         reader.read1Byte(),
         reader.read1Byte()
       )
-      MetaEvent(type, deltaTime, data)
+      MetaEvent(metaType, deltaTime, data)
     }
 
-    KEY_SIGNATURE -> {
-      val dataLength = reader.readVariableLengthValue()
+    MetaEventType.KeySignature -> {
+      reader.readVariableLengthValue() // data length (should be 2)
       val data = listOf(reader.read1Byte(), reader.read1Byte())
-      MetaEvent(type, deltaTime, data)
+      MetaEvent(metaType, deltaTime, data)
     }
 
-    MIDI_CHANNEL_PREFIX -> {
-      val dataLength = reader.readVariableLengthValue()
+    MetaEventType.MidiChannelPrefix -> {
+      reader.readVariableLengthValue() // data length (should be 1)
       val currentEffectiveMidiChannel = reader.read1Byte()
-      MetaEvent(type, deltaTime, currentEffectiveMidiChannel)
+      MetaEvent(metaType, deltaTime, currentEffectiveMidiChannel)
     }
 
-    SEQUENCER_SPECIFIC -> {
+    MetaEventType.SequencerSpecific -> {
       val dataLength = reader.readVariableLengthValue()
       val auxBytes = mutableListOf<Int>()
       repeat(dataLength) { auxBytes += reader.read1Byte() }
-      MetaEvent(type, deltaTime, auxBytes)
+      MetaEvent(metaType, deltaTime, auxBytes)
     }
 
-    END_OF_TRACK -> {
-      reader.readVariableLengthValue().also { require(it == 0) }
-      MetaEvent(type, deltaTime, emptyList<Int>())
+    MetaEventType.EndOfTrack -> {
+      val dataLength = reader.readVariableLengthValue()
+      require(dataLength == 0) { "End of Track meta event should have zero data length." }
+      MetaEvent(metaType, deltaTime, emptyList<Int>())
     }
 
-    else -> {
-      println("Unknown meta event encountered: [$type]. Reading anyway...")
+    MetaEventType.Unknown -> {
+      println("Unknown meta event encountered: [0x${code.toString(16)}]. Reading anyway...")
       val dataLength = reader.readVariableLengthValue()
       repeat(dataLength) { reader.read1Byte() }
-      MetaEvent(type, deltaTime, emptyList<Int>())
+      MetaEvent(metaType, deltaTime, emptyList<Int>())
     }
   }
 }
 
 /**
- * Reads a control event (channel event) from the provided [reader] using the given [deltaTime] and [status].
+ * Reads a control (channel) event from the provided [reader] using the given [deltaTime] and [status].
  *
  * This function decodes various types of control events (e.g., NOTE_ON, PROGRAM_CHANGE) based on the status byte.
  * It supports handling of running status.
@@ -297,55 +310,56 @@ private fun readMetaEvent(reader: Reader, deltaTime: Int): MetaEvent {
  * @throws IllegalArgumentException If an unknown control event type is encountered.
  */
 private fun readControlEvent(reader: Reader, deltaTime: Int, status: Int): ControlEvent {
+  // Extract channel from the status byte (lower 4 bits)
   val channel = status and 0b1111
-  return when (val type = status shr 4) {
-    PROGRAM_CHANGE -> {
+  // Extract control event type from the status byte (upper 4 bits)
+  val controlCode = status shr 4
+  return when (val controlType = ControlEventType.fromCode(controlCode)) {
+    ControlEventType.ProgramChange -> {
       val targetInstrument = reader.read1Byte()
-      ControlEvent(type, deltaTime, targetInstrument, channel)
+      ControlEvent(controlType, deltaTime, targetInstrument, channel)
     }
 
-    NOTE_ON, NOTE_OFF -> {
+    ControlEventType.NoteOn, ControlEventType.NoteOff -> {
       val noteNumber = reader.read1Byte() and 0b01111111
       val noteVelocity = reader.read1Byte() and 0b01111111
       val data = listOf(noteNumber, noteVelocity)
-      ControlEvent(type, deltaTime, data, channel)
+      ControlEvent(controlType, deltaTime, data, channel)
     }
 
-    POLYPHONIC_KEY_PRESSURE -> {
+    ControlEventType.PolyphonicKeyPressure -> {
       val noteNumber = reader.read1Byte()
       val pressure = reader.read1Byte()
       val data = listOf(noteNumber, pressure)
-      ControlEvent(type, deltaTime, data, channel)
+      ControlEvent(controlType, deltaTime, data, channel)
     }
 
-    CONTROL_CHANGE -> {
+    ControlEventType.ControlChange -> {
       val controlNumber = reader.read1Byte()
       val controlValue = reader.read1Byte()
       val data = listOf(controlNumber, controlValue)
-      ControlEvent(type, deltaTime, data, channel)
+      ControlEvent(controlType, deltaTime, data, channel)
     }
 
-    CHANNEL_PRESSURE -> {
+    ControlEventType.ChannelPressure -> {
       val channelPressure = reader.read1Byte()
-      ControlEvent(type, deltaTime, channelPressure, channel)
+      ControlEvent(controlType, deltaTime, channelPressure, channel)
     }
 
-    PITCH_BEND -> {
+    ControlEventType.PitchBend -> {
       val lsb = reader.read1Byte()
       val msb = reader.read1Byte()
       val pitchBend = (msb shl 7) or lsb
-      ControlEvent(type, deltaTime, pitchBend, channel)
+      ControlEvent(controlType, deltaTime, pitchBend, channel)
     }
-
-    else -> error("Unknown control event type: ${type.toString(16)}")
   }
 }
 
 /**
  * Reads and parses an entire MIDI file from the given [pathname].
  *
- * The function validates that the file exists and is not a directory,
- * then reads the header chunk and each track chunk, parsing all contained events.
+ * The function validates that the file exists and is not a directory, then reads the header chunk
+ * and each track chunk, parsing all contained events.
  *
  * @param pathname The file path to the MIDI file.
  * @return A [Midi] object containing the header and all track events.
@@ -353,8 +367,8 @@ private fun readControlEvent(reader: Reader, deltaTime: Int, status: Int): Contr
  */
 fun readMidi(pathname: String): Midi {
   val file = File(pathname)
-  if (!file.exists()) error("File does not exist")
-  if (file.isDirectory) error("Path [$pathname] is a directory, not a file")
+  require(file.exists()) { "File does not exist" }
+  require(!file.isDirectory) { "Path [$pathname] is a directory, not a file" }
 
   val fileBytes = file.readBytes().toUByteArray()
   val reader = Reader(fileBytes)
@@ -381,25 +395,25 @@ fun readMidi(pathname: String): Midi {
       val currentDeltaTime = reader.readVariableLengthValue()
       var currentStatus = reader.read1Byte()
 
-      // Support for "running status"
+      // Support for "running status" where the status byte is omitted.
       if (currentStatus ushr 7 == 0) {
         currentStatus = previousStatus
         reader.position--
       }
 
       when (currentStatus) {
-        META_EVENT -> {
+        EventType.Meta.code -> {
           val metaEvent = readMetaEvent(reader, currentDeltaTime)
           events += metaEvent
-          if (metaEvent.eventType == END_OF_TRACK) break
-          previousStatus = 0 // Reset after meta-event
+          if (metaEvent.type == MetaEventType.EndOfTrack) break
+          previousStatus = 0 // Reset running status after a meta event.
         }
 
-        SYSTEM_EXCLUSIVE_EVENT, SYSTEM_EXCLUSIVE_ESCAPE_EVENT -> {
+        EventType.SystemExclusive.code, EventType.SystemExclusiveEscape.code -> {
           val length = reader.readVariableLengthValue()
           repeat(length) { reader.read1Byte() }
           println("SysEx event found! Skipping $length byte(s)...")
-          previousStatus = 0 // Reset after SysEx
+          previousStatus = 0 // Reset running status after SysEx events.
         }
 
         else -> {
