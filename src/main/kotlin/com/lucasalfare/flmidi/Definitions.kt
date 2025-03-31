@@ -1,7 +1,6 @@
 package com.lucasalfare.flmidi
 
 import com.lucasalfare.flbinary.Reader
-import java.io.File
 
 /**
  * Extends the main reader to contains this custom function.
