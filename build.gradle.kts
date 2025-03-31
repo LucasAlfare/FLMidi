@@ -25,10 +25,6 @@ kotlin {
   jvmToolchain(21)
 }
 
-application {
-  mainClass.set("com.lucasalfare.flmidi.MainKt")
-}
-
 /**
  * Helper block to configure Maven Publishing.
  */
