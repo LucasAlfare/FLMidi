@@ -415,8 +415,3 @@ fun readMidi(pathname: String): Midi {
 
   return Midi(header = header, tracks = tracks)
 }
-
-fun main() {
-  val midi = readMidi("example4.mid")
-  midi.tracks.first().events.forEach { println(it) }
-}
