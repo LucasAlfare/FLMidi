@@ -1,33 +1,36 @@
-# FLMidi
+```
+███████╗██╗      ███╗   ███╗██╗██████╗ ██╗
+██╔════╝██║      ████╗ ████║██║██╔══██╗██║
+█████╗  ██║█████╗██╔████╔██║██║██║  ██║██║
+██╔══╝  ██║╚════╝██║╚██╔╝██║██║██║  ██║██║
+██║     ███████╗ ██║ ╚═╝ ██║██║██████╔╝██║
+╚═╝     ╚══════╝ ╚═╝     ╚═╝╚═╝╚═════╝ ╚═╝
+```
 
-This is my own library to parse MIDI files using Kotlin language/environment.
+This is my own library to parse MIDI files using Kotlin language/environment. From absolutely scratch.
 
-This is in development and should help me get binary information that lies in MIDI files and, for example, parse then to other formats.
+This is in development and should help me get binary information that lies in MIDI files.
 
 This project is being built using some oline resources:
-- [A tutorial about MIDI specification](https://www.mobilefish.com/tutorials/midi/midi_quickguide_specification.html);
-- [Standard MIDI file format](http://www.music.mcgill.ca/~ich/classes/mumt306/StandardMIDIfileformat.html);
-- [Implementing a MIDI player in Kotlin from scratch](https://livecoding-recipes.github.io/midi/kotlin/tracker/2022/08/01/implementing-a-midi-tracker-in-kotlin.html) (doesn't contains raw bytes reading implementation, but contains some insights).
+- [Standard MIDI file format](http://www.music.mcgill.ca/~ich/classes/mumt306/StandardMIDIfileformat.html).
 
 # Download
-
-Currently is in a rough development phase but should be fine to use in some pushes. But if you say... _I don care. Let me use as it is_ you can grab this project directly from its [GitHub page](https://github.com/LucasAlfare/FLMidi) with [Source Dependencies](https://blog.gradle.org/introducing-source-dependencies), from Gradle tool. First, add this to your `settings.gradle.kts`:
-
+You can grab this project using [JitPack](https://jitpack.io/#LucasAlfare/FLMidi). For this, add Jitpack as a dependency source in the repositories section of your `build.gradle.kts`:
 ```kotlin
-sourceControl {
-  gitRepository(java.net.URI("https://github.com/LucasAlfare/FLMidi")) {
-    producesModule("com.lucasalfare.flmidi:FLMidi")
-  }
+repositories {
+  mavenCentral() // for example only
+  // ...
+  maven("https://jitpack.io") // this enables you to search in Jitpack
 }
 ```
 
-After, add this to your `build.gradle.kts` to target the `master` branch of this repository:
-
+After, you can just declare this project in `dependencies` section of the same `build.gradle.kts` file as following:
 ```kotlin
-implementation("com.lucasalfare.flmidi:FLMidi") {
-  version {
-    branch = "master"
-  }
+dependencies {
+  // make sure to the right version tag
+  // for reference, check the Jitpack link for current available releases:
+  // https://jitpack.io/#LucasAlfare/FLMidi
+  implementation("com.github.LucasAlfare:FLMidi:v2.0.0")
 }
 ```
 
@@ -35,84 +38,63 @@ implementation("com.lucasalfare.flmidi:FLMidi") {
 
 This library has been built using the concept that MIDI files are composed by `Events`. In a MIDI file we can find three categories of events: `MetaEvents` `ControlEvents` and `SystemExclusiveEvents`. All these events categories will always contain the following information:
 
-- `deltaTime`: indicates the current time diff that this event occuried;
+- `deltaTime`: indicates the current time diff that this event occurred;
 - `data`: the actual data associated tho this event.
 
 All events have their own possible events and each event has its own data. The meaning behind each data value can be found in the MIDI format file specification.
 
 Knowing this, this library is able to parse all those information to Kotlin code, and it exposes it to be used. For example, to check how many `Tracks` a MIDI file contains, we can run:
 ```kotlin
-import com.lucasalfare.flmidi.loadAndReadMidiFile
-
 fun main() {
-  val myMidiInfo = loadAndReadMidiFile(
+  val myMidi = readMidi(
     "path/to/my/great/midi/file.mid"
   )
-  println(midiInfo.header.numTracks)
+  println(myMidi.header.numTracks)
 }
 ```
 
-Note that this root reading function returns a `MidiInfo` object, that contains other useful fields. For example, to check how many meta events are contained in a track, you can do:
+Note that this root reading function returns a `Midi` object, that contains other useful fields. For example, to check how many meta events are contained in a track, you can do:
 
 ```kotlin
-import com.lucasalfare.flmidi.loadAndReadMidiFile
-
 fun main() {
-  val myMidiInfo = loadAndReadMidiFile(
+  val myMidi = readMidi(
     "path/to/my/great/midi/file.mid"
   )
   println(
-    midiInfo
+    myMidi
       .header
       .tracks
       .first()
       .events
       .filter {
-        it.category == EventCategory.Meta
+        it is MetaEvent
       }
       .size
   )
 }
 ```
-# Specification basics
+# License
 
-MIDI files stores music in a different way of, e.g., MP3 and WAVE sound formats. Once mp3 and wave sotres in their bytes informations about sound waves (here doesn't matter compression terms) using its physical theory, MIDI files stores sound in a "digital" approach.
-
-For example, in MIDI files we can find information about the music tempo, note that was played or released or even meta informations, such as track names and copyright notices. For this reason, MIDI files are very good to help to deal with contexts that requires manipulation of each individual element from a song/sound.
-
-In terms of bytes structure, the MIDI files basically are composed by "Chunks" of data. Thinking the structure as something like a ".xml" or ".json" hierarchy tree we can visualize a general structure like the following:
-
-```json
-"midi": {
-  "header": {
-    "signature": "MTdH",
-    "length": 6,
-    "format": 0,
-    "numTracks": 1,
-    "timeDivision": 96
-  }
-  
-  "track": {
-    "signature": "MtrK",
-    "numBytes": "x bytes in numeric type",
-    "events": [
-      "MetaEvent": {
-        "deltaTime": 0,
-        "trackName": "This is the name of this track!"
-      }
-    ]
-  }
-}
 ```
+MIT License
 
-As you can see, the structure itself is very simple. However, is important to know some details in order to understand those details:
+Copyright (c) 2025 Francisco Lucas
 
-1) In only bytes-reading context, we must to know the right rules to be used in order to read the properly amount of bytes of each information. We must, also, know if, depending the case, we are facing a byte that must be read in a real particular way;
-2) In terms of understanding what was actually read we need to understand what the real meaning of each read value and how it can affects the sound itself. Normally this is used when we must to interpret and "play" the MIDI file, instead of only reading its bytes.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-## Events
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-The most important part that can be extracted from MIDI files bytes are the Events. Events, can basically be of three types: `MetaEvent`, `MidiEvent` and `SystemExclusiveEvent`:
-- `MetaEvents` express information that is not fundamental to define how the sound actually is, however they express some useful data to properly make the sound/track work in the same behaviour of how it was recorded to the file. For example, the information about `tempo` is stored as an `MetaEvent`;
-
- [TODO more explanations]
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
