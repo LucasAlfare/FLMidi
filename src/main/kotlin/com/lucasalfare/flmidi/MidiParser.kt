@@ -24,7 +24,7 @@ private fun readMetaEvent(reader: Reader, deltaTime: Int): MetaEvent {
     MetaEventType.SequenceNumber -> {
       reader.readVariableLengthValue() // data length (usually fixed)
       val sequenceNumber = reader.read2Bytes()
-      MetaEvent(metaType, deltaTime, NumberEventData(sequenceNumber))
+      MetaEvent(eventType = metaType, deltaTime = deltaTime, data = "Int($sequenceNumber)")
     }
 
     MetaEventType.TextEvent,
@@ -36,7 +36,7 @@ private fun readMetaEvent(reader: Reader, deltaTime: Int): MetaEvent {
     MetaEventType.CuePoint -> {
       val textLength = reader.readVariableLengthValue()
       val data = reader.readString(textLength) ?: ""
-      MetaEvent(metaType, deltaTime, TextEventData(data))
+      MetaEvent(eventType = metaType, deltaTime = deltaTime, data = "String($data)")
     }
 
     MetaEventType.TimeSignature -> {
@@ -51,13 +51,13 @@ private fun readMetaEvent(reader: Reader, deltaTime: Int): MetaEvent {
         nMidiClocksInMetronomeClick,
         numberOf32ndNotesIn24MidiClocks
       )
-      MetaEvent(metaType, deltaTime, NumberListEventData(data))
+      MetaEvent(eventType = metaType, deltaTime = deltaTime, data = "NumberList($data)")
     }
 
     MetaEventType.SetTempo -> {
       reader.readVariableLengthValue() // number of data items (should be 3)
       val tempoInMicroseconds = reader.read3Bytes()
-      MetaEvent(metaType, deltaTime, NumberEventData(tempoInMicroseconds))
+      MetaEvent(eventType = metaType, deltaTime = deltaTime, data = "Int($tempoInMicroseconds)")
     }
 
     MetaEventType.SmpteOffset -> {
@@ -69,39 +69,39 @@ private fun readMetaEvent(reader: Reader, deltaTime: Int): MetaEvent {
         reader.read1Byte(),
         reader.read1Byte()
       )
-      MetaEvent(metaType, deltaTime, NumberListEventData(data))
+      MetaEvent(eventType = metaType, deltaTime = deltaTime, data = "NumberList($data)")
     }
 
     MetaEventType.KeySignature -> {
       reader.readVariableLengthValue() // data length (should be 2)
       val data = listOf(reader.read1Byte(), reader.read1Byte())
-      MetaEvent(metaType, deltaTime, NumberListEventData(data))
+      MetaEvent(eventType = metaType, deltaTime = deltaTime, data = "NumberList($data)")
     }
 
     MetaEventType.MidiChannelPrefix -> {
       reader.readVariableLengthValue() // data length (should be 1)
       val currentEffectiveMidiChannel = reader.read1Byte()
-      MetaEvent(metaType, deltaTime, NumberEventData(currentEffectiveMidiChannel))
+      MetaEvent(eventType = metaType, deltaTime = deltaTime, data = "Int($currentEffectiveMidiChannel)")
     }
 
     MetaEventType.SequencerSpecific -> {
       val dataLength = reader.readVariableLengthValue()
       val auxBytes = mutableListOf<Int>()
       repeat(dataLength) { auxBytes += reader.read1Byte() }
-      MetaEvent(metaType, deltaTime, NumberListEventData(auxBytes))
+      MetaEvent(eventType = metaType, deltaTime = deltaTime, data = "NumberList($auxBytes)")
     }
 
     MetaEventType.EndOfTrack -> {
       val dataLength = reader.readVariableLengthValue()
       require(dataLength == 0) { "End of Track meta event should have zero data length." }
-      MetaEvent(metaType, deltaTime, NumberListEventData(emptyList<Int>()))
+      MetaEvent(eventType = metaType, deltaTime = deltaTime, data = "NumberList(${emptyList<Int>()})")
     }
 
     MetaEventType.Unknown -> {
       println("Unknown meta event encountered: [0x${code.toString(16)}]. Reading anyway...")
       val dataLength = reader.readVariableLengthValue()
       repeat(dataLength) { reader.read1Byte() }
-      MetaEvent(metaType, deltaTime, NumberListEventData(emptyList<Int>()))
+      MetaEvent(eventType = metaType, deltaTime = deltaTime, data = "NumberList(${emptyList<Int>()})")
     }
   }
 }
@@ -126,40 +126,40 @@ private fun readControlEvent(reader: Reader, deltaTime: Int, status: Int): Contr
   return when (val controlType = ControlEventType.fromCode(controlCode)) {
     ControlEventType.ProgramChange -> {
       val targetInstrument = reader.read1Byte()
-      ControlEvent(controlType, deltaTime, NumberEventData(targetInstrument), channel)
+      ControlEvent(eventType = controlType, delta = deltaTime, data = "Int($targetInstrument)", targetChannel = channel)
     }
 
     ControlEventType.NoteOn, ControlEventType.NoteOff -> {
       val noteNumber = reader.read1Byte() and 0b01111111
       val noteVelocity = reader.read1Byte() and 0b01111111
       val data = listOf(noteNumber, noteVelocity)
-      ControlEvent(controlType, deltaTime, NumberListEventData(data), channel)
+      ControlEvent(eventType = controlType, delta = deltaTime, data = "NumberList($data)", targetChannel = channel)
     }
 
     ControlEventType.PolyphonicKeyPressure -> {
       val noteNumber = reader.read1Byte()
       val pressure = reader.read1Byte()
       val data = listOf(noteNumber, pressure)
-      ControlEvent(controlType, deltaTime, NumberListEventData(data), channel)
+      ControlEvent(eventType = controlType, delta = deltaTime, data = "NumberList($data)", targetChannel = channel)
     }
 
     ControlEventType.ControlChange -> {
       val controlNumber = reader.read1Byte()
       val controlValue = reader.read1Byte()
       val data = listOf(controlNumber, controlValue)
-      ControlEvent(controlType, deltaTime, NumberListEventData(data), channel)
+      ControlEvent(eventType = controlType, delta = deltaTime, data = "NumberList($data)", targetChannel = channel)
     }
 
     ControlEventType.ChannelPressure -> {
       val channelPressure = reader.read1Byte()
-      ControlEvent(controlType, deltaTime, NumberEventData(channelPressure), channel)
+      ControlEvent(eventType = controlType, delta = deltaTime, data = "Int($channelPressure)", targetChannel = channel)
     }
 
     ControlEventType.PitchBend -> {
       val lsb = reader.read1Byte()
       val msb = reader.read1Byte()
       val pitchBend = (msb shl 7) or lsb
-      ControlEvent(controlType, deltaTime, NumberEventData(pitchBend), channel)
+      ControlEvent(eventType = controlType, delta = deltaTime, data = "Int($pitchBend)", targetChannel = channel)
     }
   }
 }

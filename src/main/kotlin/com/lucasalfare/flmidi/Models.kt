@@ -73,7 +73,7 @@ enum class MetaEventType(val code: Int) {
     fun fromCode(code: Int): MetaEventType = entries.find { it.code == code } ?: Unknown
   }
 
-  override fun toString() = "${this}(0x${code.toString(16).padStart(2, '0')})"
+  override fun toString() = "${this.name}(0x${code.toString(16).uppercase().padStart(2, '0')})"
 }
 
 /**
@@ -105,26 +105,8 @@ enum class ControlEventType(val code: Int) {
       )
   }
 
-  override fun toString() = "${this}(0x${code.toString(16).padStart(2, '0')})"
+  override fun toString() = "${this.name}(0b${code.toString(2).padStart(4, '0')})"
 }
-
-@Serializable
-sealed class EventData
-
-@Serializable
-data class NumberEventData(
-  val number: Int
-) : EventData()
-
-@Serializable
-data class TextEventData(
-  val text: String
-) : EventData()
-
-@Serializable
-data class NumberListEventData(
-  val list: List<Int>
-) : EventData()
 
 /**
  * Base class for all MIDI events.
@@ -143,7 +125,7 @@ sealed class Event
 data class MetaEvent(
   val eventType: MetaEventType,
   val deltaTime: Int,
-  val data: EventData
+  val data: String
 ) : Event()
 
 /**
@@ -158,7 +140,7 @@ data class MetaEvent(
 data class ControlEvent(
   val eventType: ControlEventType,
   val delta: Int,
-  val data: EventData,
+  val data: String,
   val targetChannel: Int
 ) : Event()
 
