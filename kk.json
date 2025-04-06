@@ -1,0 +1,108 @@
+{
+  "header": {
+    "signature": "MThd",
+    "length": 6,
+    "format": 0,
+    "numTracks": 1,
+    "division": 96
+  },
+  "tracks": [
+    {
+      "signature": "MTrk",
+      "length": 59,
+      "events": [
+        {
+          "type": "time_signature",
+          "deltaTime": 0,
+          "numerator": 4,
+          "denominator": 4,
+          "clocksPerTick": 24,
+          "notesPer24Clocks": 8
+        },
+        {
+          "type": "set_tempo",
+          "deltaTime": 0,
+          "data": 500000
+        },
+        {
+          "type": "program_change",
+          "deltaTime": 0,
+          "channel": 0,
+          "program": 5
+        },
+        {
+          "type": "program_change",
+          "deltaTime": 0,
+          "channel": 1,
+          "program": 46
+        },
+        {
+          "type": "program_change",
+          "deltaTime": 0,
+          "channel": 2,
+          "program": 70
+        },
+        {
+          "type": "note_on",
+          "deltaTime": 0,
+          "channel": 2,
+          "note": 48,
+          "velocity": 96
+        },
+        {
+          "type": "note_on",
+          "deltaTime": 0,
+          "channel": 2,
+          "note": 60,
+          "velocity": 96
+        },
+        {
+          "type": "note_on",
+          "deltaTime": 96,
+          "channel": 1,
+          "note": 67,
+          "velocity": 64
+        },
+        {
+          "type": "note_on",
+          "deltaTime": 96,
+          "channel": 0,
+          "note": 76,
+          "velocity": 32
+        },
+        {
+          "type": "note_off",
+          "deltaTime": 192,
+          "channel": 2,
+          "note": 48,
+          "velocity": 64
+        },
+        {
+          "type": "note_off",
+          "deltaTime": 0,
+          "channel": 2,
+          "note": 60,
+          "velocity": 64
+        },
+        {
+          "type": "note_off",
+          "deltaTime": 0,
+          "channel": 1,
+          "note": 67,
+          "velocity": 64
+        },
+        {
+          "type": "note_off",
+          "deltaTime": 0,
+          "channel": 0,
+          "note": 76,
+          "velocity": 64
+        },
+        {
+          "type": "end_of_track",
+          "deltaTime": 0
+        }
+      ]
+    }
+  ]
+}
