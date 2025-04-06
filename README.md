@@ -14,8 +14,9 @@ This is my own library to parse MIDI files using Kotlin language/environment. Fr
 
 This is in development and should help me get binary information that lies in MIDI files.
 
-This project is being built using some oline resources:
-- [Standard MIDI file format](http://www.music.mcgill.ca/~ich/classes/mumt306/StandardMIDIfileformat.html).
+This project is being built using some online resources:
+- [Standard MIDI file format](http://www.music.mcgill.ca/~ich/classes/mumt306/StandardMIDIfileformat.html);
+- [My custom MIDI format specification in pt-BR](https://gist.github.com/LucasAlfare/c4197b1b4776d4061b36cf6e99d06754).
 
 # Download
 You can grab this project using [JitPack](https://jitpack.io/#LucasAlfare/FLMidi). For this, add Jitpack as a dependency source in the repositories section of your `build.gradle.kts`:
