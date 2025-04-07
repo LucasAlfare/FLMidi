@@ -25,38 +25,38 @@ private fun readMetaEvent(reader: Reader, deltaTime: Int): MetaEvent {
   return when (metaType) {
     MetaEventType.SequenceNumber -> {
       val sequenceNumber = reader.read2Bytes()
-      SequenceNumberMetaEvent(deltaTime = deltaTime, data = sequenceNumber)
+      SequenceNumberMetaEvent(deltaTime = deltaTime, sequenceNumber = sequenceNumber)
     }
 
     MetaEventType.TextEvent ->
-      TextMetaEvent(deltaTime = deltaTime, data = reader.readString(length) ?: "")
+      TextMetaEvent(deltaTime = deltaTime, text = reader.readString(length) ?: "")
 
     MetaEventType.CopyrightNotice ->
-      CopyrightNoticeMetaEvent(deltaTime = deltaTime, data = reader.readString(length) ?: "")
+      CopyrightNoticeMetaEvent(deltaTime = deltaTime, copyrightNotice = reader.readString(length) ?: "")
 
     MetaEventType.TrackName ->
-      TrackNameMetaEvent(deltaTime = deltaTime, data = reader.readString(length) ?: "")
+      TrackNameMetaEvent(deltaTime = deltaTime, trackName = reader.readString(length) ?: "")
 
     MetaEventType.InstrumentName ->
-      InstrumentNameMetaEvent(deltaTime = deltaTime, data = reader.readString(length) ?: "")
+      InstrumentNameMetaEvent(deltaTime = deltaTime, instrumentName = reader.readString(length) ?: "")
 
     MetaEventType.Lyric ->
-      LyricMetaEvent(deltaTime = deltaTime, data = reader.readString(length) ?: "")
+      LyricMetaEvent(deltaTime = deltaTime, lyric = reader.readString(length) ?: "")
 
     MetaEventType.Marker ->
-      MarkerMetaEvent(deltaTime = deltaTime, data = reader.readString(length) ?: "")
+      MarkerMetaEvent(deltaTime = deltaTime, marker = reader.readString(length) ?: "")
 
     MetaEventType.CuePoint ->
-      CuePointMetaEvent(deltaTime = deltaTime, data = reader.readString(length) ?: "")
+      CuePointMetaEvent(deltaTime = deltaTime, cuePoint = reader.readString(length) ?: "")
 
     MetaEventType.MidiChannelPrefix -> {
       val channel = reader.read1Byte()
-      MidiChannelPrefixMetaEvent(deltaTime = deltaTime, data = channel)
+      MidiChannelPrefixMetaEvent(deltaTime = deltaTime, midiChannelPrefix = channel)
     }
 
     MetaEventType.SetTempo -> {
       val tempo = reader.read3Bytes()
-      SetTempoMetaEvent(deltaTime = deltaTime, data = tempo)
+      SetTempoMetaEvent(deltaTime = deltaTime, tempo = tempo)
     }
 
     MetaEventType.SmpteOffset -> {
@@ -97,7 +97,7 @@ private fun readMetaEvent(reader: Reader, deltaTime: Int): MetaEvent {
 
     MetaEventType.SequencerSpecific -> {
       val data = ByteArray(length) { reader.read1Byte().toByte() }
-      SequencerSpecificMetaEvent(deltaTime = deltaTime, data = data)
+      SequencerSpecificMetaEvent(deltaTime = deltaTime, rawData = data)
     }
 
     MetaEventType.EndOfTrack -> {
@@ -107,7 +107,7 @@ private fun readMetaEvent(reader: Reader, deltaTime: Int): MetaEvent {
 
     MetaEventType.Unknown -> {
       val data = ByteArray(length) { reader.read1Byte().toByte() }
-      UnknownMetaEvent(deltaTime = deltaTime, data = data)
+      UnknownMetaEvent(deltaTime = deltaTime, unknownRawData = data)
     }
   }
 }
@@ -240,7 +240,7 @@ fun readMidi(pathname: String): Midi {
         EventType.SystemExclusive.code, EventType.SystemExclusiveEscape.code -> {
           val length = reader.readVariableLengthValue()
           val data = ByteArray(length) { reader.read1Byte().toByte() }
-          events += SysExEvent(deltaTime = deltaTime, data = data)
+          events += SysExEvent(deltaTime = deltaTime, sysexRawData = data)
           previousStatus = 0
         }
 
