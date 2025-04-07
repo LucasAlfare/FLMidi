@@ -34,7 +34,7 @@ dependencies {
   // make sure to the right version tag
   // for reference, check the Jitpack link for current available releases:
   // https://jitpack.io/#LucasAlfare/FLMidi
-  implementation("com.github.LucasAlfare:FLMidi:v2.0.0")
+  implementation("com.github.LucasAlfare:FLMidi:v2.1.1")
 }
 ```
 
