@@ -14,7 +14,8 @@ repositories {
 }
 
 dependencies {
-  implementation("com.github.LucasAlfare:FLBinary:v1.6")
+//  implementation("com.github.LucasAlfare:FLBinary:v1.6")
+  implementation(libs.fl.binary)
   implementation(libs.kotlinx.serialization.json)
   testImplementation(kotlin("test"))
 }

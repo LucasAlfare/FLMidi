@@ -8,3 +8,4 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization"}
+fl-binary = { module = "com.github.LucasAlfare:FLBinary", version = "v1.6" }
