@@ -29,25 +29,25 @@ private fun readMetaEvent(reader: Reader, deltaTime: Int): MetaEvent {
     }
 
     MetaEventType.TextEvent ->
-      TextMetaEvent(deltaTime = deltaTime, text = reader.readString(length) ?: "")
+      TextMetaEvent(deltaTime = deltaTime, text = reader.readString(length))
 
     MetaEventType.CopyrightNotice ->
-      CopyrightNoticeMetaEvent(deltaTime = deltaTime, copyrightNotice = reader.readString(length) ?: "")
+      CopyrightNoticeMetaEvent(deltaTime = deltaTime, copyrightNotice = reader.readString(length))
 
     MetaEventType.TrackName ->
-      TrackNameMetaEvent(deltaTime = deltaTime, trackName = reader.readString(length) ?: "")
+      TrackNameMetaEvent(deltaTime = deltaTime, trackName = reader.readString(length))
 
     MetaEventType.InstrumentName ->
-      InstrumentNameMetaEvent(deltaTime = deltaTime, instrumentName = reader.readString(length) ?: "")
+      InstrumentNameMetaEvent(deltaTime = deltaTime, instrumentName = reader.readString(length))
 
     MetaEventType.Lyric ->
-      LyricMetaEvent(deltaTime = deltaTime, lyric = reader.readString(length) ?: "")
+      LyricMetaEvent(deltaTime = deltaTime, lyric = reader.readString(length))
 
     MetaEventType.Marker ->
-      MarkerMetaEvent(deltaTime = deltaTime, marker = reader.readString(length) ?: "")
+      MarkerMetaEvent(deltaTime = deltaTime, marker = reader.readString(length))
 
     MetaEventType.CuePoint ->
-      CuePointMetaEvent(deltaTime = deltaTime, cuePoint = reader.readString(length) ?: "")
+      CuePointMetaEvent(deltaTime = deltaTime, cuePoint = reader.readString(length))
 
     MetaEventType.MidiChannelPrefix -> {
       val channel = reader.read1Byte()
@@ -203,8 +203,8 @@ fun readMidi(pathname: String): Midi {
 
   // Ler o cabeçalho
   val header = Header(
-    signature = reader.readString(4) ?: error("Missing header chunk type signature!"),
-    length = reader.read4Bytes().toLong(),
+    signature = reader.readString(4),
+    length = reader.read4Bytes(),
     format = reader.read2Bytes(),
     numTracks = reader.read2Bytes(),
     division = reader.read2Bytes()
@@ -213,7 +213,7 @@ fun readMidi(pathname: String): Midi {
   // Ler as trilhas
   val tracks = mutableListOf<Track>()
   repeat(header.numTracks) {
-    val trackType = reader.readString(4) ?: error("Missing track chunk type signature!")
+    val trackType = reader.readString(4)
     val trackLength = reader.read4Bytes().toInt()
     val finalOffset = reader.position + trackLength
     val events = mutableListOf<Event>()
