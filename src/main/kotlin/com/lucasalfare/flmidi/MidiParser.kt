@@ -255,5 +255,5 @@ fun readMidi(pathname: String): Midi {
     tracks += Track(signature = trackType, length = trackLength, events = events)
   }
 
-  return Midi(header = header, tracks = tracks)
+  return Midi(header = header, tracks = tracks, rawBytes = fileBytes)
 }

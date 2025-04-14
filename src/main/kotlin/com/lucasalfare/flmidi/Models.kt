@@ -2,8 +2,10 @@
 
 package com.lucasalfare.flmidi
 
+import com.lucasalfare.flbinary.hexDump
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 /**
  * Represents the kind of the event is.
@@ -333,8 +335,15 @@ data class Track(
   val name: String = events.filterIsInstance<TrackNameMetaEvent>().singleOrNull()?.trackName ?: ""
 }
 
+@OptIn(ExperimentalUnsignedTypes::class)
 @Serializable
 data class Midi(
   val header: Header,
-  val tracks: List<Track>
-)
+  val tracks: List<Track>,
+  @Transient val rawBytes: UByteArray = UByteArray(0)
+) {
+
+  fun dumpedRawBytes(bytesPerLine: Int = 16): String {
+    return hexDump(data = rawBytes, bytesPerLine = bytesPerLine)
+  }
+}
