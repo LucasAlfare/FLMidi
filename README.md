@@ -6,6 +6,7 @@
 ██║     ███████╗              ██║ ╚═╝ ██║██║██████╔╝██║
 ╚═╝     ╚══════╝              ╚═╝     ╚═╝╚═╝╚═════╝ ╚═╝
 ```
+![](https://jitpack.io/v/LucasAlfare/FLMidi.svg)
 
 This is my own library for parsing MIDI files using the Kotlin programming language — built entirely from scratch.
 
