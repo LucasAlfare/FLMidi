@@ -9,16 +9,18 @@
 
 This is my own library for parsing MIDI files using the Kotlin programming language — built entirely from scratch.
 
-> 🚧 This library may be unstable for some Control Events.
+Its main goal is to extract and interpret binary data contained within MIDI files, enabling deeper understanding and handling meaning of the actual binary data.
 
-Its main goal is to extract and interpret binary data contained within MIDI files, enabling deeper understanding and manipulation of the format.
+For this library, I am using my [custom binary reader helper](https://github.com/LucasAlfare/FLBinary). At this point, the binary reader doesn't support bytes stream yet, so the file bytes are loaded to the memory to be read. Since MIDI doesn't have commonly ultra large files, this should not be a bad point. This should be updated in the future.
+
+> _**🚧 Note:**_ This library is tested against MIDI files of format `0` and `1`, so may be unstable on reading files of format `2`. See the reason at [MidiTests.kt](src/test/kotlin/MidiTests.kt) _kDocs_. 
 
 ## References and Resources
 
 This project is being developed with the help of the following resources:
 
 - [Standard MIDI File Format (McGill University)](http://www.music.mcgill.ca/~ich/classes/mumt306/StandardMIDIfileformat.html)
-- [Minha especificação customizada do formato MIDI (pt-BR)](https://gist.github.com/LucasAlfare/c4197b1b4776d4061b36cf6e99d06754)[]
+- [Minha especificação customizada do formato MIDI (pt-BR)](https://gist.github.com/LucasAlfare/c4197b1b4776d4061b36cf6e99d06754)
 
 # Download
 You can include this project in your build using [JitPack](https://jitpack.io/#LucasAlfare/FLMidi).
@@ -59,39 +61,9 @@ Each event type may represent different kinds of events, and the structure or me
 
 Based on this structure, the library parses all MIDI data into Kotlin models, making it accessible and easy to use in code.
 
-For example, to get the number of `Tracks` in a MIDI file, you can do:
-```kotlin
-fun main() {
-  val myMidi = readMidi(
-    "path/to/my/great/midi/file.mid"
-  )
-  println(myMidi.header.numTracks)
-}
-```
+You can take more deep examples in the main project [test file](src/test/kotlin/MidiTests.kt), from tests sources package.
 
-Note that the root parsing function returns a `Midi` object, which provides access to several useful fields.
-
-For example, to check how many meta events are present in a specific track, you can do:
-```kotlin
-fun main() {
-  val myMidi = readMidi(
-    "path/to/my/great/midi/file.mid"
-  )
-  println(
-    myMidi
-      .header
-      .tracks
-      .first()
-      .events
-      .filter {
-        it is MetaEvent
-      }
-      .size
-  )
-}
-```
-# License
-
+# [LICENSE](LICENSE)
 ```
 MIT License
 
