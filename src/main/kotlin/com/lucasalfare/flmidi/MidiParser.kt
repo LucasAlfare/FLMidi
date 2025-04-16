@@ -183,25 +183,11 @@ private fun readControlEvent(reader: Reader, deltaTime: Int, status: Int): Contr
   }
 }
 
-/**
- * Reads and parses an entire MIDI file from the given [pathname].
- *
- * The function validates that the file exists and is not a directory, then reads the header chunk
- * and each track chunk, parsing all contained events.
- *
- * @param pathname The file path to the MIDI file.
- * @return A [Midi] object containing the header and all track events.
- * @throws IllegalArgumentException If the file does not exist or if the path points to a directory.
- */
-fun readMidi(pathname: String): Midi {
-  val file = File(pathname)
-  require(file.exists()) { "File does not exist" }
-  require(!file.isDirectory) { "Path [$pathname] is a directory, not a file" }
+fun readMidiFromBytes(midiBytes: ByteArray): Midi {
+  val unsignedBytes = midiBytes.toUByteArray()
+  val reader = Reader(unsignedBytes)
 
-  val fileBytes = file.readBytes().toUByteArray()
-  val reader = Reader(fileBytes)
-
-  // Ler o cabeçalho
+  // Read the header
   val header = Header(
     signature = reader.readString(4),
     length = reader.read4Bytes(),
@@ -210,7 +196,7 @@ fun readMidi(pathname: String): Midi {
     division = reader.read2Bytes()
   )
 
-  // Ler as trilhas
+  // Read tracks
   val tracks = mutableListOf<Track>()
   repeat(header.numTracks) {
     val trackType = reader.readString(4)
@@ -255,5 +241,23 @@ fun readMidi(pathname: String): Midi {
     tracks += Track(signature = trackType, length = trackLength, events = events)
   }
 
-  return Midi(header = header, tracks = tracks, rawBytes = fileBytes)
+  return Midi(header = header, tracks = tracks, rawBytes = unsignedBytes)
+}
+
+/**
+ * Reads and parses an entire MIDI file from the given [pathname].
+ *
+ * The function validates that the file exists and is not a directory, then reads the header chunk
+ * and each track chunk, parsing all contained events.
+ *
+ * @param pathname The file path to the MIDI file.
+ * @return A [Midi] object containing the header and all track events.
+ * @throws IllegalArgumentException If the file does not exist or if the path points to a directory.
+ */
+fun readMidiFromFile(pathname: String): Midi {
+  val file = File(pathname)
+  require(file.exists()) { "File does not exist" }
+  require(!file.isDirectory) { "Path [$pathname] is a directory, not a file" }
+  val fileBytes = file.readBytes()
+  return readMidiFromBytes(fileBytes)
 }
