@@ -21,7 +21,7 @@ For this library, I am using my [custom binary reader helper](https://github.com
 This project is being developed with the help of the following resources:
 
 - [Standard MIDI File Format (McGill University)](http://www.music.mcgill.ca/~ich/classes/mumt306/StandardMIDIfileformat.html)
-- [Minha especificação customizada do formato MIDI (pt-BR)](https://gist.github.com/LucasAlfare/c4197b1b4776d4061b36cf6e99d06754)
+- [Minha especificação customizada do formato MIDI (pt-BR)](https://lucasalfare.github.io/blog/2025/07/24/midi_docs/) 
 
 # Download
 You can include this project in your build using [JitPack](https://jitpack.io/#LucasAlfare/FLMidi).
