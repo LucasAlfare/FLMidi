@@ -305,78 +305,14 @@ fun readMidiFromFile(pathname: String): Midi {
   return readMidiFromBytes(fileBytes)
 }
 
-//@ExperimentalUnsignedTypes
-//fun readMidi(pathname: String): Midi {
-//  val file = File(pathname)
-//  require(file.exists()) { "File does not exist" }
-//  require(!file.isDirectory) { "Path [$pathname] is a directory, not a file" }
-//
-//  val fileBytes = file.readBytes().toUByteArray()
-//  val reader = Reader(fileBytes)
-//
-//  // Read the header chunk
-//  val header = Header(
-//    chunkType = reader.readString(4) ?: error("Missing header chunk type signature!"),
-//    length = reader.read4Bytes(),
-//    format = reader.read2Bytes(),
-//    numTracks = reader.read2Bytes(),
-//    division = reader.read2Bytes()
-//  )
-//
-//  // Read track chunks
-//  val tracks = mutableListOf<Track>()
-//  repeat(header.numTracks) {
-//    val trackType = reader.readString(4) ?: error("Missing track chunk type signature!")
-//    val trackLength = reader.read4Bytes().toInt()
-//    val finalOffset = reader.position + trackLength
-//    val events = mutableListOf<Event>()
-//    var previousStatus = 0
-//
-//    while (reader.position < finalOffset) {
-//      val currentDeltaTime = reader.readVariableLengthValue()
-//      var currentStatus = reader.read1Byte()
-//
-//      // Support for "running status" where the status byte is omitted.
-//      if (currentStatus ushr 7 == 0) {
-//        currentStatus = previousStatus
-//        reader.position--
-//      }
-//
-//      when (currentStatus) {
-//        EventType.Meta.code -> {
-//          val metaEvent = readMetaEvent(reader, currentDeltaTime)
-//          events += metaEvent
-//
-//          if (metaEvent is EndOfTrackMetaEvent) break
-//
-////          if (metaEvent.metaEventType == MetaEventType.EndOfTrack.code) break
-//
-//          previousStatus = 0 // Reset running status after a meta event.
-//        }
-//
-//        EventType.SystemExclusive.code, EventType.SystemExclusiveEscape.code -> {
-//          val length = reader.readVariableLengthValue()
-//          repeat(length) { reader.read1Byte() }
-//          println("SysEx event found! Skipping $length byte(s)...")
-//          previousStatus = 0 // Reset running status after SysEx events.
-//        }
-//
-//        else -> {
-//          previousStatus = currentStatus
-//          val controlEvent = readControlEvent(reader, currentDeltaTime, currentStatus)
-//          events += controlEvent
-//        }
-//      }
-//    }
-//
-//    tracks += Track(type = trackType, length = trackLength, events = events)
-//  }
-//
-//  return Midi(header = header, tracks = tracks)
-//}
-
 @ExperimentalUnsignedTypes
 fun main() {
   val midi = readMidiFromFile("example.mid")
-  println(SimpleMidiJsonParser.midiToJson(midi, formatted = true))
+  println(midi.header)
+  midi.tracks.forEach {
+    println("\tA new track:")
+    it.events.forEach { e ->
+      println("\t\t${e}")
+    }
+  }
 }
