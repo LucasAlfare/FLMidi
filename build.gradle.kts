@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.lucasalfare.flmidi"
-version = "v2.0.0"
+version = "v2.1.1"
 
 repositories {
   mavenCentral()
@@ -14,7 +14,7 @@ repositories {
 }
 
 dependencies {
-  implementation("com.github.LucasAlfare:FLBinary:v1.6")
+  implementation(libs.fl.binary)
   implementation(libs.kotlinx.serialization.json)
   testImplementation(kotlin("test"))
 }

@@ -1,24 +1,32 @@
 ```
-
 ███████╗██╗                   ███╗   ███╗██╗██████╗ ██╗
 ██╔════╝██║                   ████╗ ████║██║██╔══██╗██║
 █████╗  ██║         █████╗    ██╔████╔██║██║██║  ██║██║
 ██╔══╝  ██║         ╚════╝    ██║╚██╔╝██║██║██║  ██║██║
 ██║     ███████╗              ██║ ╚═╝ ██║██║██████╔╝██║
 ╚═╝     ╚══════╝              ╚═╝     ╚═╝╚═╝╚═════╝ ╚═╝
-                                                       
-
 ```
+![](https://jitpack.io/v/LucasAlfare/FLMidi.svg)
 
-This is my own library to parse MIDI files using Kotlin language/environment. From absolutely scratch.
+This is my own library for parsing MIDI files using the Kotlin programming language — built entirely from scratch.
 
-This is in development and should help me get binary information that lies in MIDI files.
+Its main goal is to extract and interpret binary data contained within MIDI files, enabling deeper understanding and handling meaning of the actual binary data.
 
-This project is being built using some oline resources:
-- [Standard MIDI file format](http://www.music.mcgill.ca/~ich/classes/mumt306/StandardMIDIfileformat.html).
+For this library, I am using my [custom binary reader helper](https://github.com/LucasAlfare/FLBinary). At this point, the binary reader doesn't support bytes stream yet, so the file bytes are loaded to the memory to be read. Since MIDI doesn't have commonly ultra large files, this should not be a bad point. This should be updated in the future.
+
+> _**🚧 Note:**_ This library is tested against MIDI files of format `0` and `1`, so may be unstable on reading files of format `2`. See the reason at [MidiTests.kt](src/test/kotlin/MidiTests.kt) _kDocs_. 
+
+## References and Resources
+
+This project is being developed with the help of the following resources:
+
+- [Standard MIDI File Format (McGill University)](http://www.music.mcgill.ca/~ich/classes/mumt306/StandardMIDIfileformat.html)
+- [Minha especificação customizada do formato MIDI (pt-BR)](https://lucasalfare.github.io/blog/2025/07/24/midi_docs/) 
 
 # Download
-You can grab this project using [JitPack](https://jitpack.io/#LucasAlfare/FLMidi). For this, add Jitpack as a dependency source in the repositories section of your `build.gradle.kts`:
+You can include this project in your build using [JitPack](https://jitpack.io/#LucasAlfare/FLMidi).
+
+To do this, first add JitPack to the `repositories` section of your `build.gradle.kts` file:
 ```kotlin
 repositories {
   mavenCentral() // for example only
@@ -27,57 +35,36 @@ repositories {
 }
 ```
 
-After, you can just declare this project in `dependencies` section of the same `build.gradle.kts` file as following:
+Next, declare the project dependency in the `dependencies` section of the same `build.gradle.kts` file as follows:
 ```kotlin
 dependencies {
   // make sure to the right version tag
   // for reference, check the Jitpack link for current available releases:
   // https://jitpack.io/#LucasAlfare/FLMidi
-  implementation("com.github.LucasAlfare:FLMidi:v2.0.0")
+  implementation("com.github.LucasAlfare:FLMidi:v2.1.1")
 }
 ```
 
-# How to use
+# How to Use
 
-This library has been built using the concept that MIDI files are composed by `Events`. In a MIDI file we can find three categories of events: `MetaEvents` `ControlEvents` and `SystemExclusiveEvents`. All these events categories will always contain the following information:
+This library is built around the concept that MIDI files are composed of `Events`. Within a MIDI file, there are three main categories of events:
 
-- `deltaTime`: indicates the current time diff that this event occurred;
-- `data`: the actual data associated tho this event.
+- `MetaEvents`
+- `ControlEvents`
+- `SystemExclusiveEvents`
 
-All events have their own possible events and each event has its own data. The meaning behind each data value can be found in the MIDI format file specification.
+Each of these event types contains the following common properties:
 
-Knowing this, this library is able to parse all those information to Kotlin code, and it exposes it to be used. For example, to check how many `Tracks` a MIDI file contains, we can run:
-```kotlin
-fun main() {
-  val myMidi = readMidi(
-    "path/to/my/great/midi/file.mid"
-  )
-  println(myMidi.header.numTracks)
-}
-```
+- `deltaTime`: the time difference (in ticks) since the previous event;
+- `data`: the raw data associated with the event.
 
-Note that this root reading function returns a `Midi` object, that contains other useful fields. For example, to check how many meta events are contained in a track, you can do:
+Each event type may represent different kinds of events, and the structure or meaning of their data varies. You can find detailed explanations about these data values in the official MIDI file format specification.
 
-```kotlin
-fun main() {
-  val myMidi = readMidi(
-    "path/to/my/great/midi/file.mid"
-  )
-  println(
-    myMidi
-      .header
-      .tracks
-      .first()
-      .events
-      .filter {
-        it is MetaEvent
-      }
-      .size
-  )
-}
-```
-# License
+Based on this structure, the library parses all MIDI data into Kotlin models, making it accessible and easy to use in code.
 
+You can take more deep examples in the main project [test file](src/test/kotlin/MidiTests.kt), from tests sources package.
+
+# [LICENSE](LICENSE)
 ```
 MIT License
 

@@ -8,9 +8,11 @@ import kotlin.math.pow
 fun readMetaEvent(reader: Reader, deltaTime: Int): MetaEvent {
   // Read the meta event type code and resolve it to the corresponding enum value.
   val code = reader.read1Byte()
-  return when (val metaType = MetaEventType.fromCode(code)) {
+  val metaType = MetaEventType.fromCode(code)
+  val length = reader.readVariableLengthValue()
+
+  return when (metaType) {
     MetaEventType.SequenceNumber -> {
-      reader.readVariableLengthValue() // data length (usually fixed)
       val sequenceNumber = reader.read2Bytes()
       SequenceNumberMetaEvent(metaEventType = metaType.code, deltaTime = deltaTime, sequenceNumber = sequenceNumber)
     }
@@ -165,7 +167,7 @@ fun readControlEvent(reader: Reader, deltaTime: Int, status: Int): ControlEvent 
     }
 
     ControlEventType.PolyphonicKeyPressure -> {
-      val noteNumber = reader.read1Byte()
+      val note = reader.read1Byte()
       val pressure = reader.read1Byte()
       PolyphonicKeyPressureControlEvent(
         controlEventType = controlType.code,
@@ -280,7 +282,7 @@ fun readMidiFromBytes(midiBytes: ByteArray): Midi {
       }
     }
 
-    tracks += Track(type = trackType, length = trackLength, events = events)
+    tracks += Track(signature = trackType, length = trackLength, events = events)
   }
 
   return Midi(header = header, tracks = tracks)

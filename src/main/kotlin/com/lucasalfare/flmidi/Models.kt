@@ -1,6 +1,11 @@
+@file:Suppress("ArrayInDataClass")
+
 package com.lucasalfare.flmidi
 
+import com.lucasalfare.flbinary.hexDump
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 @Serializable
 enum class EventType(val code: Int) {
@@ -207,34 +212,36 @@ data class PitchBendControlEvent(
 
 @Serializable
 data class Header(
-  val chunkType: String,
+  val signature: String,
   val length: Long,
   val format: Int,
   val numTracks: Int,
   val division: Int
-) {
-  init {
-    require(chunkType == "MThd") { "Header chunk type signature is not 'MThd'!" }
-    if (format == 0) require(numTracks == 1) { "Format 0 MIDI files must contain exactly one track!" }
-    else if (format == 1 || format == 2) require(numTracks >= 1) { "MIDI file must contain at least one track!" }
-  }
-}
+)
 
 @Serializable
 data class Track(
-  val type: String,
+  val signature: String,
   val length: Int,
   val events: List<Event>
 ) {
-  init {
-    require(type == "MTrk") { "Track type signature is not 'MTrk'!" }
-    require(length > 0) { "Track with length 0!" }
-    require(events.isNotEmpty()) { "Track without any events!" }
-  }
+
+  /**
+   * Helper field to retrieve track name!
+   *
+   * If track doesn't have a [TrackNameMetaEvent], just leaves it empty.
+   */
+  val name: String = events.filterIsInstance<TrackNameMetaEvent>().singleOrNull()?.trackName ?: ""
 }
 
 @Serializable
 data class Midi(
   val header: Header,
-  val tracks: List<Track>
-)
+  val tracks: List<Track>,
+  @Transient val rawBytes: UByteArray = UByteArray(0)
+) {
+
+  fun dumpedRawBytes(bytesPerLine: Int = 16): String {
+    return hexDump(data = rawBytes, bytesPerLine = bytesPerLine)
+  }
+}
