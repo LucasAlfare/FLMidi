@@ -1,10 +1,11 @@
 @file:OptIn(ExperimentalUnsignedTypes::class, ExperimentalUnsignedTypes::class)
 
 import com.lucasalfare.flmidi.*
-import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 /**
  * ## MIDI Specification Compliance Tests
@@ -108,346 +109,296 @@ class MidiTests {
     0x00u, 0xFFu, 0x2Fu, 0x00u
   ).toByteArray()
 
-  /**
-   * Ensures the MIDI header signature matches "MThd" as per the specification.
-   */
-  @Test
-  fun `test header signatures`() {
-    val midi0 = readMidiFromBytes(format0Midi)
-    assertEquals(expected = "MThd", midi0.header.chunkType)
+  private lateinit var midi0: Midi
+  private lateinit var midi1: Midi
 
-    val midi1 = readMidiFromBytes(format1Midi)
-    assertEquals(expected = "MThd", midi1.header.chunkType)
+  @BeforeEach
+  fun setUp() {
+    midi0 = readMidiFromBytes(format0Midi)
+    midi1 = readMidiFromBytes(format1Midi)
   }
 
-  /**
-   * Validates that the declared header length is 6 bytes, as mandated for all standard MIDI files.
-   */
-  @Test
-  fun `test header lengths`() {
-    val midi0 = readMidiFromBytes(format0Midi)
-    assertEquals(expected = 6, midi0.header.length)
+  // --- Helpers ---
 
-    val midi1 = readMidiFromBytes(format1Midi)
-    assertEquals(expected = 6, midi1.header.length)
+  /**
+   * Asserts that the event is of the expected type and returns it casted.
+   */
+  private inline fun <reified T> assertIsAndReturn(event: Event): T {
+    assertTrue(event is T, "Expected event of type ${T::class.simpleName} but was ${event::class.simpleName}")
+    @Suppress("UNCHECKED_CAST")
+    return event as T
   }
 
-  /**
-   * Confirms that the format field in the header correctly identifies MIDI format 0 and 1.
-   */
-  @Test
-  fun `test header formats`() {
-    val midi0 = readMidiFromBytes(format0Midi)
-    assertEquals(expected = 0, midi0.header.format)
+  // --- Basic header and track tests ---
 
-    val midi1 = readMidiFromBytes(format1Midi)
-    assertEquals(expected = 1, midi1.header.format)
+  @Test
+  fun `header signature is MThd`() {
+    assertEquals("MThd", midi0.header.signature)
+    assertEquals("MThd", midi1.header.signature)
   }
 
-  /**
-   * Verifies the number of tracks declared in the header corresponds to the actual track chunks parsed.
-   */
   @Test
-  fun `test header number of tracks`() {
-    val midi0 = readMidiFromBytes(format0Midi)
-    assertEquals(expected = 1, midi0.header.numTracks)
-
-    val midi1 = readMidiFromBytes(format1Midi)
-    assertEquals(expected = 4, midi1.header.numTracks)
+  fun `header length is 6 bytes`() {
+    assertEquals(6, midi0.header.length)
+    assertEquals(6, midi1.header.length)
   }
 
-  /**
-   * Checks that the division field (timebase resolution) is correctly parsed from the header.
-   */
   @Test
-  fun `test header time division resolutions`() {
-    val midi0 = readMidiFromBytes(format0Midi)
-    assertEquals(expected = 96, midi0.header.division)
-
-    val midi1 = readMidiFromBytes(format1Midi)
-    assertEquals(expected = 96, midi1.header.division)
+  fun `header formats`() {
+    assertEquals(0, midi0.header.format)
+    assertEquals(1, midi1.header.format)
   }
 
-  /**
-   * Asserts that format 0 MIDI files contain exactly one track chunk.
-   */
   @Test
-  fun `test midiFormat0 track existence`() {
-    val midi = readMidiFromBytes(format0Midi)
-    assertNotNull(midi.tracks.singleOrNull())
+  fun `header number of tracks`() {
+    assertEquals(1, midi0.header.numTracks)
+    assertEquals(4, midi1.header.numTracks)
   }
 
-  /**
-   * Ensures all track chunks in a format 1 MIDI file exist and are consistent with the header's declared count.
-   */
   @Test
-  fun `test midiFormat1 tracks existence`() {
-    val midi = readMidiFromBytes(format1Midi)
-    assertTrue(midi.tracks.isNotEmpty())
-    assertEquals(expected = midi.tracks.size, actual = midi.header.numTracks)
+  fun `header division`() {
+    assertEquals(96, midi0.header.division)
+    assertEquals(96, midi1.header.division)
   }
 
-  /**
-   * Validates that each track chunk begins with the expected "MTrk" signature.
-   */
   @Test
-  fun `test MIDIs tracks signatures`() {
-    val midi0 = readMidiFromBytes(format0Midi)
-    assertEquals(expected = "MTrk", actual = midi0.tracks.first().type)
-
-    val midi1 = readMidiFromBytes(format1Midi)
-    midi1.tracks.forEach {
-      assertEquals(expected = "MTrk", actual = it.type)
-    }
+  fun `format0 has single track`() {
+    assertNotNull(midi0.tracks.singleOrNull())
   }
 
-  /**
-   * Asserts that track lengths match the values declared in the byte stream.
-   */
   @Test
-  fun `test MIDIs tracks lengths`() {
-    val midi0 = readMidiFromBytes(format0Midi)
-    assertEquals(expected = 59, actual = midi0.tracks.first().length)
+  fun `format1 tracks exist and count matches header`() {
+    assertTrue(midi1.tracks.isNotEmpty())
+    assertEquals(midi1.tracks.size, midi1.header.numTracks)
+  }
 
-    val midi1 = readMidiFromBytes(format1Midi)
+  @Test
+  fun `tracks signatures are MTrk`() {
+    assertEquals("MTrk", midi0.tracks.first().signature)
+    midi1.tracks.forEach { assertEquals("MTrk", it.signature) }
+  }
+
+  @Test
+  fun `tracks lengths match declared values`() {
+    assertEquals(59, midi0.tracks.first().length)
+
     val expectedLengths = intArrayOf(20, 16, 15, 21)
     midi1.tracks.forEachIndexed { index, track ->
-      assertEquals(expected = expectedLengths[index], actual = track.length)
+      assertEquals(expectedLengths[index], track.length)
     }
   }
 
-  // FORMAT 0 EVENTS TESTING
+  // --- Format 0 event tests ---
 
-  /**
-   * Confirms that all events in the format 0 file are parsed and counted correctly.
-   */
   @Test
-  fun `test MIDI0 track events count`() {
-    val midi0 = readMidiFromBytes(format0Midi)
+  fun `format0 events count`() {
     val events = midi0.tracks.first().events
     assertTrue(events.isNotEmpty())
-    assertEquals(events.size, 14)
+    assertEquals(14, events.size)
   }
 
-  /**
-   * Tests each event in the format 0 MIDI file for expected type and correct parsed data.
-   * Includes validation for Time Signature, Set Tempo, Program Change and Note events.
-   */
   @Test
-  fun `test MIDI0 track events`() {
-    val midi0 = readMidiFromBytes(format0Midi)
+  fun `format0 events content`() {
     val events = midi0.tracks.first().events
 
     var e = events[0]
-    assertTrue(e is TimeSignatureMetaEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 4, actual = e.upperSignature)
-    assertEquals(expected = 4, actual = e.powerOfTwoToLowerValue)
-    assertEquals(expected = 24, actual = e.nMidiClocksInMetronomeClick)
-    assertEquals(expected = 8, actual = e.nMidiClocksOf32ndNotesIn24MidiClocks)
+    val t = assertIsAndReturn<TimeSignatureMetaEvent>(e)
+    assertEquals(0, t.deltaTime)
+    assertEquals(4, t.numerator)
+    assertEquals(4, t.denominator)
+    assertEquals(24, t.clocksPerTick)
+    assertEquals(8, t.notesPer24Clocks)
 
     e = events[1]
-    assertTrue(e is SetTempoMetaEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 500000, actual = e.tempoInMicroseconds)
+    val tempo = assertIsAndReturn<SetTempoMetaEvent>(e)
+    assertEquals(0, tempo.deltaTime)
+    assertEquals(500000, tempo.tempo)
 
     e = events[2]
-    assertTrue(e is ProgramChangeControlEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 1 - 1, actual = e.targetChannel)
-    assertEquals(expected = 5, actual = e.targetInstrument)
+    val pc1 = assertIsAndReturn<ProgramChangeControlEvent>(e)
+    assertEquals(0, pc1.deltaTime)
+    assertEquals(0, pc1.channel)
+    assertEquals(5, pc1.program)
 
     e = events[3]
-    assertTrue(e is ProgramChangeControlEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 2 - 1, actual = e.targetChannel)
-    assertEquals(expected = 46, actual = e.targetInstrument)
+    val pc2 = assertIsAndReturn<ProgramChangeControlEvent>(e)
+    assertEquals(0, pc2.deltaTime)
+    assertEquals(1, pc2.channel)
+    assertEquals(46, pc2.program)
 
     e = events[4]
-    assertTrue(e is ProgramChangeControlEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 3 - 1, actual = e.targetChannel)
-    assertEquals(expected = 70, actual = e.targetInstrument)
+    val pc3 = assertIsAndReturn<ProgramChangeControlEvent>(e)
+    assertEquals(0, pc3.deltaTime)
+    assertEquals(2, pc3.channel)
+    assertEquals(70, pc3.program)
 
     e = events[5]
-    assertTrue(e is NoteOnControlEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 3 - 1, actual = e.targetChannel)
-    assertEquals(expected = 48, actual = e.noteNumber) // note C3
-    assertEquals(expected = 96, actual = e.noteVelocity) // velocity "forte"
+    val n0 = assertIsAndReturn<NoteOnControlEvent>(e)
+    assertEquals(0, n0.deltaTime)
+    assertEquals(2, n0.channel)
+    assertEquals(48, n0.note)
+    assertEquals(96, n0.velocity)
 
     e = events[6]
-    assertTrue(e is NoteOnControlEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 3 - 1, actual = e.targetChannel)
-    assertEquals(expected = 60, actual = e.noteNumber) // note C4
-    assertEquals(expected = 96, actual = e.noteVelocity) // velocity "forte"
+    val n1 = assertIsAndReturn<NoteOnControlEvent>(e)
+    assertEquals(0, n1.deltaTime)
+    assertEquals(2, n1.channel)
+    assertEquals(60, n1.note)
+    assertEquals(96, n1.velocity)
 
     e = events[7]
-    assertTrue(e is NoteOnControlEvent)
-    assertEquals(expected = 96, actual = e.deltaTime)
-    assertEquals(expected = 2 - 1, actual = e.targetChannel)
-    assertEquals(expected = 67, actual = e.noteNumber) // note G4
-    assertEquals(expected = 64, actual = e.noteVelocity) // velocity "mezzo-forte"
+    val n2 = assertIsAndReturn<NoteOnControlEvent>(e)
+    assertEquals(96, n2.deltaTime)
+    assertEquals(1, n2.channel)
+    assertEquals(67, n2.note)
+    assertEquals(64, n2.velocity)
 
     e = events[8]
-    assertTrue(e is NoteOnControlEvent)
-    assertEquals(expected = 96, actual = e.deltaTime)
-    assertEquals(expected = 1 - 1, actual = e.targetChannel)
-    assertEquals(expected = 76, actual = e.noteNumber) // note E5
-    assertEquals(expected = 32, actual = e.noteVelocity) // velocity "piano"
+    val n3 = assertIsAndReturn<NoteOnControlEvent>(e)
+    assertEquals(96, n3.deltaTime)
+    assertEquals(0, n3.channel)
+    assertEquals(76, n3.note)
+    assertEquals(32, n3.velocity)
 
     e = events[9]
-    assertTrue(e is NoteOffControlEvent)
-    assertEquals(expected = 192, actual = e.deltaTime)
-    assertEquals(expected = 3 - 1, actual = e.targetChannel)
-    assertEquals(expected = 48, actual = e.noteNumber) // note C3
-    assertEquals(expected = 64, actual = e.noteVelocity) // velocity "standard"
+    val off0 = assertIsAndReturn<NoteOffControlEvent>(e)
+    assertEquals(192, off0.deltaTime)
+    assertEquals(2, off0.channel)
+    assertEquals(48, off0.note)
+    assertEquals(64, off0.velocity)
 
     e = events[10]
-    assertTrue(e is NoteOffControlEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 3 - 1, actual = e.targetChannel)
-    assertEquals(expected = 60, actual = e.noteNumber) // note C4
-    assertEquals(expected = 64, actual = e.noteVelocity) // velocity "standard"
+    val off1 = assertIsAndReturn<NoteOffControlEvent>(e)
+    assertEquals(0, off1.deltaTime)
+    assertEquals(2, off1.channel)
+    assertEquals(60, off1.note)
+    assertEquals(64, off1.velocity)
 
     e = events[11]
-    assertTrue(e is NoteOffControlEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 2 - 1, actual = e.targetChannel)
-    assertEquals(expected = 67, actual = e.noteNumber) // note G4
-    assertEquals(expected = 64, actual = e.noteVelocity) // velocity "standard"
+    val off2 = assertIsAndReturn<NoteOffControlEvent>(e)
+    assertEquals(0, off2.deltaTime)
+    assertEquals(1, off2.channel)
+    assertEquals(67, off2.note)
+    assertEquals(64, off2.velocity)
 
     e = events[12]
-    assertTrue(e is NoteOffControlEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 1 - 1, actual = e.targetChannel)
-    assertEquals(expected = 76, actual = e.noteNumber) // note E5
-    assertEquals(expected = 64, actual = e.noteVelocity) // velocity "standard"
+    val off3 = assertIsAndReturn<NoteOffControlEvent>(e)
+    assertEquals(0, off3.deltaTime)
+    assertEquals(0, off3.channel)
+    assertEquals(76, off3.note)
+    assertEquals(64, off3.velocity)
 
     e = events[13]
-    assertTrue(e is EndOfTrackMetaEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
+    val end = assertIsAndReturn<EndOfTrackMetaEvent>(e)
+    assertEquals(0, end.deltaTime)
   }
 
-  /**
-   * Checks the type and correctness of each event in a format 0 MIDI track.
-   *
-   * Includes:
-   * - Time Signature Meta Event
-   * - Set Tempo Meta Event
-   * - Program Change Event
-   * - Note On and Note Off Events
-   */
-  @Test
-  fun `test MIDI1 track0 events`() {
-    val midi = readMidiFromBytes(format1Midi)
-    val tracks = midi.tracks
+  // --- Format 1 event tests ---
 
-    // track 0 events
+  @Test
+  fun `format1 track0 events`() {
+    val tracks = midi1.tracks
+
     var e = tracks[0].events[0]
-    assertTrue(e is TimeSignatureMetaEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 4, actual = e.upperSignature)
-    assertEquals(expected = 4, actual = e.powerOfTwoToLowerValue)
-    assertEquals(expected = 24, actual = e.nMidiClocksInMetronomeClick)
-    assertEquals(expected = 8, actual = e.nMidiClocksOf32ndNotesIn24MidiClocks)
+    val t = assertIsAndReturn<TimeSignatureMetaEvent>(e)
+    assertEquals(0, t.deltaTime)
+    assertEquals(4, t.numerator)
+    assertEquals(4, t.denominator)
+    assertEquals(24, t.clocksPerTick)
+    assertEquals(8, t.notesPer24Clocks)
 
     e = tracks[0].events[1]
-    assertTrue(e is SetTempoMetaEvent)
-    assertEquals(expected = 0x07A120, actual = e.tempoInMicroseconds)
-//
+    val tempo = assertIsAndReturn<SetTempoMetaEvent>(e)
+    assertEquals(0x07A120, tempo.tempo)
+
     e = tracks[0].events[2]
-    assertTrue(e is EndOfTrackMetaEvent)
-    assertEquals(expected = 384, actual = e.deltaTime)
-//
-    // track 1 events
+    val eot0 = assertIsAndReturn<EndOfTrackMetaEvent>(e)
+    assertEquals(384, eot0.deltaTime)
+
+    // track 1
     e = tracks[1].events[0]
-    assertTrue(e is ProgramChangeControlEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 0, actual = e.targetChannel)
-    assertEquals(expected = 5, actual = e.targetInstrument)
-//
+    val pc = assertIsAndReturn<ProgramChangeControlEvent>(e)
+    assertEquals(0, pc.deltaTime)
+    assertEquals(0, pc.channel)
+    assertEquals(5, pc.program)
+
     e = tracks[1].events[1]
-    assertTrue(e is NoteOnControlEvent)
-    assertEquals(expected = 192, actual = e.deltaTime)
-    assertEquals(expected = 0, actual = e.targetChannel)
-    assertEquals(expected = 76, actual = e.noteNumber) // note E5
-    assertEquals(expected = 32, actual = e.noteVelocity)
-//
+    val noteA = assertIsAndReturn<NoteOnControlEvent>(e)
+    assertEquals(192, noteA.deltaTime)
+    assertEquals(0, noteA.channel)
+    assertEquals(76, noteA.note)
+    assertEquals(32, noteA.velocity)
+
     e = tracks[1].events[2]
-    assertTrue(e is NoteOnControlEvent)
-    assertEquals(expected = 192, actual = e.deltaTime)
-    assertEquals(expected = 0, actual = e.targetChannel)
-    assertEquals(expected = 76, actual = e.noteNumber)
-    assertEquals(expected = 0, actual = e.noteVelocity) // note on with velocity 0 means same as note off
+    val noteAoff = assertIsAndReturn<NoteOnControlEvent>(e)
+    assertEquals(192, noteAoff.deltaTime)
+    assertEquals(0, noteAoff.channel)
+    assertEquals(76, noteAoff.note)
+    assertEquals(0, noteAoff.velocity)
 
-    e = tracks[1].events[3]
-    assertTrue(e is EndOfTrackMetaEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
+    val eot1 = assertIsAndReturn<EndOfTrackMetaEvent>(tracks[1].events[3])
+    assertEquals(0, eot1.deltaTime)
 
-    // track 2 events
+    // track 2
     e = tracks[2].events[0]
-    assertTrue(e is ProgramChangeControlEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 1, actual = e.targetChannel)
-    assertEquals(expected = 46, actual = e.targetInstrument)
+    val pc2 = assertIsAndReturn<ProgramChangeControlEvent>(e)
+    assertEquals(0, pc2.deltaTime)
+    assertEquals(1, pc2.channel)
+    assertEquals(46, pc2.program)
 
     e = tracks[2].events[1]
-    assertTrue(e is NoteOnControlEvent)
-    assertEquals(expected = 96, actual = e.deltaTime)
-    assertEquals(expected = 1, actual = e.targetChannel)
-    assertEquals(expected = 67, actual = e.noteNumber) // note G4
-    assertEquals(expected = 64, actual = e.noteVelocity)
+    val noteG = assertIsAndReturn<NoteOnControlEvent>(e)
+    assertEquals(96, noteG.deltaTime)
+    assertEquals(1, noteG.channel)
+    assertEquals(67, noteG.note)
+    assertEquals(64, noteG.velocity)
 
     e = tracks[2].events[2]
-    assertTrue(e is NoteOnControlEvent)
-    assertEquals(expected = 288, actual = e.deltaTime)
-    assertEquals(expected = 1, actual = e.targetChannel)
-    assertEquals(expected = 67, actual = e.noteNumber)
-    assertEquals(expected = 0, actual = e.noteVelocity) // note on with velocity 0 means same as note off
+    val noteGoff = assertIsAndReturn<NoteOnControlEvent>(e)
+    assertEquals(288, noteGoff.deltaTime)
+    assertEquals(1, noteGoff.channel)
+    assertEquals(67, noteGoff.note)
+    assertEquals(0, noteGoff.velocity)
 
-    e = tracks[2].events[3]
-    assertTrue(e is EndOfTrackMetaEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
+    val eot2 = assertIsAndReturn<EndOfTrackMetaEvent>(tracks[2].events[3])
+    assertEquals(0, eot2.deltaTime)
 
-    // track 3 events
+    // track 3
     e = tracks[3].events[0]
-    assertTrue(e is ProgramChangeControlEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 2, actual = e.targetChannel)
-    assertEquals(expected = 70, actual = e.targetInstrument)
+    val pc3 = assertIsAndReturn<ProgramChangeControlEvent>(e)
+    assertEquals(0, pc3.deltaTime)
+    assertEquals(2, pc3.channel)
+    assertEquals(70, pc3.program)
 
     e = tracks[3].events[1]
-    assertTrue(e is NoteOnControlEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 2, actual = e.targetChannel)
-    assertEquals(expected = 48, actual = e.noteNumber) // note C3
-    assertEquals(expected = 96, actual = e.noteVelocity)
+    val n0 = assertIsAndReturn<NoteOnControlEvent>(e)
+    assertEquals(0, n0.deltaTime)
+    assertEquals(2, n0.channel)
+    assertEquals(48, n0.note)
+    assertEquals(96, n0.velocity)
 
     e = tracks[3].events[2]
-    assertTrue(e is NoteOnControlEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 2, actual = e.targetChannel)
-    assertEquals(expected = 60, actual = e.noteNumber) // note C4
-    assertEquals(expected = 96, actual = e.noteVelocity)
+    val n1 = assertIsAndReturn<NoteOnControlEvent>(e)
+    assertEquals(0, n1.deltaTime)
+    assertEquals(2, n1.channel)
+    assertEquals(60, n1.note)
+    assertEquals(96, n1.velocity)
 
     e = tracks[3].events[3]
-    assertTrue(e is NoteOnControlEvent)
-    assertEquals(expected = 384, actual = e.deltaTime)
-    assertEquals(expected = 2, actual = e.targetChannel)
-    assertEquals(expected = 48, actual = e.noteNumber)
-    assertEquals(expected = 0, actual = e.noteVelocity) // note on with velocity 0 means same as note off
+    val n2 = assertIsAndReturn<NoteOnControlEvent>(e)
+    assertEquals(384, n2.deltaTime)
+    assertEquals(2, n2.channel)
+    assertEquals(48, n2.note)
+    assertEquals(0, n2.velocity)
 
     e = tracks[3].events[4]
-    assertTrue(e is NoteOnControlEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 2, actual = e.targetChannel)
-    assertEquals(expected = 60, actual = e.noteNumber)
-    assertEquals(expected = 0, actual = e.noteVelocity) // note on with velocity 0 means same as note off
+    val n3 = assertIsAndReturn<NoteOnControlEvent>(e)
+    assertEquals(0, n3.deltaTime)
+    assertEquals(2, n3.channel)
+    assertEquals(60, n3.note)
+    assertEquals(0, n3.velocity)
 
-    e = tracks[3].events[5]
-    assertTrue(e is EndOfTrackMetaEvent)
-    assertEquals(expected = 0, actual = e.deltaTime)
+    val eot3 = assertIsAndReturn<EndOfTrackMetaEvent>(tracks[3].events[5])
+    assertEquals(0, eot3.deltaTime)
   }
 }

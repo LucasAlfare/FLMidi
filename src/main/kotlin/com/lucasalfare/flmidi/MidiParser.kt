@@ -1,237 +1,185 @@
+@file:OptIn(ExperimentalUnsignedTypes::class)
+
 package com.lucasalfare.flmidi
 
 import com.lucasalfare.flbinary.Reader
 import java.io.File
-import kotlin.collections.plusAssign
-import kotlin.math.pow
+import kotlin.math.*
 
-fun readMetaEvent(reader: Reader, deltaTime: Int): MetaEvent {
-  // Read the meta event type code and resolve it to the corresponding enum value.
+fun readMetaEvent(reader: Reader, deltaTime: Int): Event? {
   val code = reader.read1Byte()
-  val metaType = MetaEventType.fromCode(code)
+  val metaType = EventSubType.fromCode(code)
   val length = reader.readVariableLengthValue()
 
   return when (metaType) {
-    MetaEventType.SequenceNumber -> {
-      val sequenceNumber = reader.read2Bytes()
-      SequenceNumberMetaEvent(metaEventType = metaType.code, deltaTime = deltaTime, sequenceNumber = sequenceNumber)
+    EventSubType.SequenceNumberMetaEvent -> {
+      // Sequence number should be 2 bytes, but we still read according to length to be robust
+      val sequenceNumber = when (length) {
+        2 -> reader.read2Bytes()
+        else -> {
+          // If length != 2, try to read up to 2 bytes or default 0
+          val bytes = ByteArray(length) { reader.read1Byte().toByte() }
+          if (bytes.size >= 2) ((bytes[0].toInt() and 0xFF) shl 8) or (bytes[1].toInt() and 0xFF) else 0
+        }
+      }
+      SequenceNumberMetaEvent(deltaTime = deltaTime, sequenceNumber = sequenceNumber)
     }
 
-    MetaEventType.TextEvent -> {
-      val textLength = reader.readVariableLengthValue()
-      val data = reader.readString(textLength) ?: ""
-      TextEventMetaEvent(metaEventType = metaType.code, deltaTime = deltaTime, textData = data)
+    EventSubType.TextEventMetaEvent ->
+      TextMetaEvent(deltaTime = deltaTime, text = reader.readString(length))
+
+    EventSubType.CopyrightNoticeMetaEvent ->
+      CopyrightNoticeMetaEvent(deltaTime = deltaTime, copyrightNotice = reader.readString(length))
+
+    EventSubType.TrackNameMetaEvent ->
+      TrackNameMetaEvent(deltaTime = deltaTime, trackName = reader.readString(length))
+
+    EventSubType.InstrumentNameMetaEvent ->
+      InstrumentNameMetaEvent(deltaTime = deltaTime, instrumentName = reader.readString(length))
+
+    EventSubType.LyricMetaEvent ->
+      LyricMetaEvent(deltaTime = deltaTime, lyric = reader.readString(length))
+
+    EventSubType.MarkerMetaEvent ->
+      MarkerMetaEvent(deltaTime = deltaTime, marker = reader.readString(length))
+
+    EventSubType.CuePointMetaEvent ->
+      CuePointMetaEvent(deltaTime = deltaTime, cuePoint = reader.readString(length))
+
+    EventSubType.MidiChannelPrefixMetaEvent -> {
+      val channel = reader.read1Byte()
+      MidiChannelPrefixMetaEvent(deltaTime = deltaTime, midiChannelPrefix = channel)
     }
 
-    MetaEventType.CopyrightNotice -> {
-      val textLength = reader.readVariableLengthValue()
-      val data = reader.readString(textLength) ?: ""
-      CopyrightNoticeMetaEvent(metaEventType = metaType.code, deltaTime = deltaTime, textData = data)
+    EventSubType.SetTempoMetaEvent -> {
+      val tempo = reader.read3Bytes()
+      SetTempoMetaEvent(deltaTime = deltaTime, tempo = tempo)
     }
 
-    MetaEventType.TrackName -> {
-      val textLength = reader.readVariableLengthValue()
-      val data = reader.readString(textLength) ?: ""
-      TrackNameMetaEvent(metaEventType = metaType.code, deltaTime = deltaTime, textData = data)
-    }
-
-    MetaEventType.InstrumentName -> {
-      val textLength = reader.readVariableLengthValue()
-      val data = reader.readString(textLength) ?: ""
-      InstrumentNameMetaEvent(metaEventType = metaType.code, deltaTime = deltaTime, textData = data)
-    }
-
-    MetaEventType.Lyric -> {
-      val textLength = reader.readVariableLengthValue()
-      val data = reader.readString(textLength) ?: ""
-      LyricMetaEvent(metaEventType = metaType.code, deltaTime = deltaTime, textData = data)
-    }
-
-    MetaEventType.Marker -> {
-      val textLength = reader.readVariableLengthValue()
-      val data = reader.readString(textLength) ?: ""
-      MarkerMetaEvent(metaEventType = metaType.code, deltaTime = deltaTime, textData = data)
-    }
-
-    MetaEventType.CuePoint -> {
-      val textLength = reader.readVariableLengthValue()
-      val data = reader.readString(textLength) ?: ""
-      CuePointMetaEvent(metaEventType = metaType.code, deltaTime = deltaTime, textData = data)
-    }
-
-    MetaEventType.MidiChannelPrefix -> {
-      reader.readVariableLengthValue() // data length (should be 1)
-      val currentEffectiveMidiChannel = reader.read1Byte()
-      MidiChannelPrefixMetaEvent(
-        metaEventType = metaType.code,
-        deltaTime = deltaTime,
-        currentEffectiveMidiChannel = currentEffectiveMidiChannel
-      )
-    }
-
-    MetaEventType.SetTempo -> {
-      reader.readVariableLengthValue() // number of data items (should be 3)
-      val tempoInMicroseconds = reader.read3Bytes()
-      SetTempoMetaEvent(metaEventType = metaType.code, deltaTime = deltaTime, tempoInMicroseconds = tempoInMicroseconds)
-    }
-
-    MetaEventType.SmpteOffset -> {
-      reader.readVariableLengthValue() // data length (should be 5)
+    EventSubType.SmpteOffsetMetaEvent -> {
+      val hour = reader.read1Byte()
+      val minute = reader.read1Byte()
+      val second = reader.read1Byte()
+      val frame = reader.read1Byte()
+      val subframe = reader.read1Byte()
       SmpteOffsetMetaEvent(
-        metaEventType = metaType.code,
         deltaTime = deltaTime,
-        byte1 = reader.read1Byte(),
-        byte2 = reader.read1Byte(),
-        byte3 = reader.read1Byte(),
-        byte4 = reader.read1Byte(),
-        byte5 = reader.read1Byte(),
+        hour = hour,
+        minute = minute,
+        second = second,
+        frame = frame,
+        subframe = subframe
       )
     }
 
-    MetaEventType.TimeSignature -> {
-      reader.readVariableLengthValue() // number of data items (should be 4)
-      val upperSignatureValue = reader.read1Byte()
-      val powerOfTwoToLowerValue = reader.read1Byte()
-      val nMidiClocksInMetronomeClick = reader.read1Byte()
-      val numberOf32ndNotesIn24MidiClocks = reader.read1Byte()
+    EventSubType.TimeSignatureMetaEvent -> {
+      val numerator = reader.read1Byte()
+      val denominatorExp = reader.read1Byte()
+      val denominator = 1 shl denominatorExp // 2^denominatorExp
+      val clocksPerTick = reader.read1Byte()
+      val notesPer24Clocks = reader.read1Byte()
       TimeSignatureMetaEvent(
-        metaEventType = metaType.code,
         deltaTime = deltaTime,
-        upperSignature = upperSignatureValue,
-        powerOfTwoToLowerValue = 2f.pow(powerOfTwoToLowerValue).toInt(),
-        nMidiClocksInMetronomeClick = nMidiClocksInMetronomeClick,
-        nMidiClocksOf32ndNotesIn24MidiClocks = numberOf32ndNotesIn24MidiClocks
+        numerator = numerator,
+        denominator = denominator,
+        clocksPerTick = clocksPerTick,
+        notesPer24Clocks = notesPer24Clocks
       )
     }
 
-    MetaEventType.KeySignature -> {
-      reader.readVariableLengthValue() // data length (should be 2)
-      KeySignatureMetaEvent(
-        metaEventType = metaType.code,
-        deltaTime = deltaTime,
-        byte1 = reader.read1Byte(),
-        byte2 = reader.read1Byte()
-      )
+    EventSubType.KeySignatureMetaEvent -> {
+      val key = reader.read1Byte()
+      val scale = reader.read1Byte()
+      KeySignatureMetaEvent(deltaTime = deltaTime, key = key, scale = scale)
     }
 
-    MetaEventType.SequencerSpecific -> {
-      val dataLength = reader.readVariableLengthValue()
-      val auxBytes = mutableListOf<Int>()
-      repeat(dataLength) { auxBytes += reader.read1Byte() }
-      SequencerSpecificMetaEvent(metaEventType = metaType.code, deltaTime = deltaTime, bytes = auxBytes)
+    EventSubType.SequencerSpecificMetaEvent -> {
+      val data = ByteArray(length) { reader.read1Byte().toByte() }
+      SequencerSpecificMetaEvent(deltaTime = deltaTime, rawData = data)
     }
 
-    MetaEventType.EndOfTrack -> {
-      val dataLength = reader.readVariableLengthValue()
-      require(dataLength == 0) { "End of Track meta event should have zero data length." }
-      EndOfTrackMetaEvent(metaEventType = metaType.code, deltaTime = deltaTime, bytes = emptyList())
+    EventSubType.EndOfTrackMetaEvent -> {
+      require(length == 0) { "EndOfTrack event should have zero length" }
+      EndOfTrackMetaEvent(deltaTime = deltaTime)
     }
 
-    MetaEventType.Unknown -> {
-      println("Unknown meta event encountered: [0x${code.toString(16)}]. Reading anyway...")
-      val dataLength = reader.readVariableLengthValue()
-      repeat(dataLength) { reader.read1Byte() }
-      UnkownMetaEvent(metaEventType = metaType.code, deltaTime = deltaTime, bytes = emptyList())
+    EventSubType.UnknownEventSubType -> {
+      val data = ByteArray(length) { reader.read1Byte().toByte() }
+      UnknownMetaEvent(deltaTime = deltaTime, unknownRawData = data)
     }
+
+    else -> null
   }
 }
 
-fun readControlEvent(reader: Reader, deltaTime: Int, status: Int): ControlEvent {
-  // Extract channel from the status byte (lower 4 bits)
-  val channel = status and 0b1111
-  // Extract control event type from the status byte (upper 4 bits)
+fun readControlEvent(reader: Reader, deltaTime: Int, status: Int): Event? {
+  val channel = status and 0x0F
   val controlCode = status shr 4
-  return when (val controlType = ControlEventType.fromCode(controlCode)) {
-    ControlEventType.NoteOn -> {
-      val noteNumber = reader.read1Byte() and 0b01111111
-      val noteVelocity = reader.read1Byte() and 0b01111111
-      NoteOnControlEvent(
-        controlEventType = controlType.code,
-        deltaTime = deltaTime,
-        targetChannel = channel,
-        noteNumber = noteNumber,
-        noteVelocity = noteVelocity
-      )
+  val controlType = EventSubType.fromCode(controlCode)
+
+  return when (controlType) {
+    EventSubType.NoteOnControlEvent -> {
+      val note = reader.read1Byte()
+      val velocity = reader.read1Byte()
+      NoteOnControlEvent(deltaTime = deltaTime, channel = channel, note = note, velocity = velocity)
     }
 
-    ControlEventType.NoteOff -> {
-      val noteNumber = reader.read1Byte() and 0b01111111
-      val noteVelocity = reader.read1Byte() and 0b01111111
-      NoteOffControlEvent(
-        controlEventType = controlType.code,
-        deltaTime = deltaTime,
-        targetChannel = channel,
-        noteNumber = noteNumber,
-        noteVelocity = noteVelocity
-      )
+    EventSubType.NoteOffControlEvent -> {
+      val note = reader.read1Byte()
+      val velocity = reader.read1Byte()
+      NoteOffControlEvent(deltaTime = deltaTime, channel = channel, note = note, velocity = velocity)
     }
 
-    ControlEventType.PolyphonicKeyPressure -> {
+    EventSubType.PolyphonicKeyPressureControlEvent -> {
       val note = reader.read1Byte()
       val pressure = reader.read1Byte()
       PolyphonicKeyPressureControlEvent(
-        controlEventType = controlType.code,
         deltaTime = deltaTime,
-        targetChannel = channel,
-        noteNumber = noteNumber,
+        channel = channel,
+        note = note,
         pressure = pressure
       )
     }
 
-    ControlEventType.ControlChange -> {
-      val controlNumber = reader.read1Byte()
-      val controlValue = reader.read1Byte()
+    EventSubType.ControlChangeControlEvent -> {
+      val controller = reader.read1Byte()
+      val value = reader.read1Byte()
       ControlChangeControlEvent(
-        controlEventType = controlType.code,
         deltaTime = deltaTime,
-        targetChannel = channel,
-        controlNumber = controlNumber,
-        controlValue = controlValue
+        channel = channel,
+        controller = controller,
+        value = value
       )
     }
 
-    ControlEventType.ProgramChange -> {
-      val targetInstrument = reader.read1Byte()
-      ProgramChangeControlEvent(
-        controlEventType = controlType.code,
-        deltaTime = deltaTime,
-        targetChannel = channel,
-        targetInstrument = targetInstrument
-      )
+    EventSubType.ProgramChangeControlEvent -> {
+      val program = reader.read1Byte()
+      ProgramChangeControlEvent(deltaTime = deltaTime, channel = channel, program = program)
     }
 
-    ControlEventType.ChannelPressure -> {
-      val channelPressure = reader.read1Byte()
-      ChannelPressureControlEvent(
-        controlEventType = controlType.code,
-        deltaTime = deltaTime,
-        targetChannel = channel,
-        channelPressure = channelPressure
-      )
+    EventSubType.ChannelPressureControlEvent -> {
+      val pressure = reader.read1Byte()
+      ChannelPressureControlEvent(deltaTime = deltaTime, channel = channel, pressure = pressure)
     }
 
-    ControlEventType.PitchBend -> {
+    EventSubType.PitchBendControlEvent -> {
       val lsb = reader.read1Byte()
       val msb = reader.read1Byte()
-      val pitchBend = (msb shl 7) or lsb
-      PitchBendControlEvent(
-        controlEventType = controlType.code,
-        deltaTime = deltaTime,
-        targetChannel = channel,
-        pitchBend = pitchBend
-      )
+      val bend = (msb shl 7) or lsb
+      PitchBendControlEvent(deltaTime = deltaTime, channel = channel, bend = bend)
     }
+
+    else -> null
   }
 }
 
-@ExperimentalUnsignedTypes
 fun readMidiFromBytes(midiBytes: ByteArray): Midi {
   val unsignedBytes = midiBytes.toUByteArray()
   val reader = Reader(unsignedBytes)
 
-  // Read the header
+  // Read header
   val header = Header(
-    chunkType = reader.readString(4) ?: "",
+    signature = reader.readString(4),
     length = reader.read4Bytes(),
     format = reader.read2Bytes(),
     numTracks = reader.read2Bytes(),
@@ -241,7 +189,7 @@ fun readMidiFromBytes(midiBytes: ByteArray): Midi {
   // Read tracks
   val tracks = mutableListOf<Track>()
   repeat(header.numTracks) {
-    val trackType = reader.readString(4) ?: ""
+    val trackType = reader.readString(4)
     val trackLength = reader.read4Bytes().toInt()
     val finalOffset = reader.position + trackLength
     val events = mutableListOf<Event>()
@@ -251,7 +199,7 @@ fun readMidiFromBytes(midiBytes: ByteArray): Midi {
       val deltaTime = reader.readVariableLengthValue()
       var status = reader.read1Byte()
 
-      // Suporte ao "running status"
+      // Running status: if byte < 0x80 it's a data byte, so reuse previousStatus and step back
       if (status ushr 7 == 0) {
         status = previousStatus
         reader.position--
@@ -260,24 +208,24 @@ fun readMidiFromBytes(midiBytes: ByteArray): Midi {
       when (status) {
         EventType.Meta.code -> {
           val metaEvent = readMetaEvent(reader, deltaTime)
-          events += metaEvent
-
-          if (metaEvent is EndOfTrackMetaEvent) break
-
-//          if (metaEvent.eventType == MetaEventType.EndOfTrack) break
-          previousStatus = 0
+          if (metaEvent != null) {
+            events += metaEvent
+            if (metaEvent.subType == EventSubType.EndOfTrackMetaEvent) break
+            previousStatus = 0
+          }
         }
+
         EventType.SystemExclusive.code, EventType.SystemExclusiveEscape.code -> {
           val length = reader.readVariableLengthValue()
           val data = ByteArray(length) { reader.read1Byte().toByte() }
-          events += SysExEvent(deltaTime = deltaTime, data = data)
+          events += SysExEvent(deltaTime = deltaTime, sysexRawData = data)
           previousStatus = 0
         }
 
         else -> {
           previousStatus = status
           val controlEvent = readControlEvent(reader, deltaTime, status)
-          events += controlEvent
+          if (controlEvent != null) events += controlEvent
         }
       }
     }
@@ -285,36 +233,13 @@ fun readMidiFromBytes(midiBytes: ByteArray): Midi {
     tracks += Track(signature = trackType, length = trackLength, events = events)
   }
 
-  return Midi(header = header, tracks = tracks)
+  return Midi(header = header, tracks = tracks, rawBytes = unsignedBytes)
 }
 
-/**
- * Reads and parses an entire MIDI file from the given [pathname].
- *
- * The function validates that the file exists and is not a directory, then reads the header chunk
- * and each track chunk, parsing all contained events.
- *
- * @param pathname The file path to the MIDI file.
- * @return A [Midi] object containing the header and all track events.
- * @throws IllegalArgumentException If the file does not exist or if the path points to a directory.
- */
-@ExperimentalUnsignedTypes
 fun readMidiFromFile(pathname: String): Midi {
   val file = File(pathname)
   require(file.exists()) { "File does not exist" }
   require(!file.isDirectory) { "Path [$pathname] is a directory, not a file" }
   val fileBytes = file.readBytes()
   return readMidiFromBytes(fileBytes)
-}
-
-@ExperimentalUnsignedTypes
-fun main() {
-  val midi = readMidiFromFile("example.mid")
-  println(midi.header)
-  midi.tracks.forEach {
-    println("\tA new track:")
-    it.events.forEach { e ->
-      println("\t\t${e}")
-    }
-  }
 }

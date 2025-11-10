@@ -3,214 +3,287 @@
 package com.lucasalfare.flmidi
 
 import com.lucasalfare.flbinary.hexDump
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 
-@Serializable
 enum class EventType(val code: Int) {
   Meta(0xFF),
-
   SystemExclusive(0xF0),
+  SystemExclusiveEscape(0xF7),
+  Other(0)
+}
 
-  SystemExclusiveEscape(0xF7);
+enum class EventSubType(val code: Int) {
+  // Meta Events
+  SequenceNumberMetaEvent(0x00),
+  TextEventMetaEvent(0x01),
+  CopyrightNoticeMetaEvent(0x02),
+  TrackNameMetaEvent(0x03),
+  InstrumentNameMetaEvent(0x04),
+  LyricMetaEvent(0x05),
+  MarkerMetaEvent(0x06),
+  CuePointMetaEvent(0x07),
+  MidiChannelPrefixMetaEvent(0x20),
+  SetTempoMetaEvent(0x51),
+  SmpteOffsetMetaEvent(0x54),
+  TimeSignatureMetaEvent(0x58),
+  KeySignatureMetaEvent(0x59),
+  SequencerSpecificMetaEvent(0x7F),
+  EndOfTrackMetaEvent(0x2F),
+  UnknownEventSubType(-1),
+
+  // Control Events (high nibble)
+  NoteOffControlEvent(0x8),
+  NoteOnControlEvent(0x9),
+  PolyphonicKeyPressureControlEvent(0xA),
+  ControlChangeControlEvent(0xB),
+  ProgramChangeControlEvent(0xC),
+  ChannelPressureControlEvent(0xD),
+  PitchBendControlEvent(0xE);
 
   companion object {
-    fun fromCode(code: Int): EventType? = entries.find { it.code == code }
+    fun fromCode(code: Int): EventSubType = entries.find { it.code == code } ?: UnknownEventSubType
   }
 }
 
-@Serializable
-enum class MetaEventType(val code: Int) {
-  SequenceNumber(0x00),
-  TextEvent(0x01),
-  CopyrightNotice(0x02),
-  TrackName(0x03),
-  InstrumentName(0x04),
-  Lyric(0x05),
-  Marker(0x06),
-  CuePoint(0x07),
-  MidiChannelPrefix(0x20),
-  SetTempo(0x51),
-  SmpteOffset(0x54),
-  TimeSignature(0x58),
-  KeySignature(0x59),
-  SequencerSpecific(0x7F),
-  EndOfTrack(0x2F),
+open class Event(
+  val type: EventType,
+  val subType: EventSubType,
+  open val deltaTime: Int
+)
 
-  Unknown(-1);
+data class SequenceNumberMetaEvent(
+  override val deltaTime: Int,
+  val sequenceNumber: Int
+) : Event(
+  type = EventType.Meta,
+  subType = EventSubType.SequenceNumberMetaEvent,
+  deltaTime = deltaTime
+)
 
-  companion object {
-    fun fromCode(code: Int): MetaEventType = entries.find { it.code == code } ?: Unknown
-  }
+data class TextMetaEvent(
+  override val deltaTime: Int,
+  val text: String
+) : Event(
+  type = EventType.Meta,
+  subType = EventSubType.TextEventMetaEvent,
+  deltaTime = deltaTime
+)
 
-  override fun toString() = "${this.name}(0x${code.toString(16).uppercase().padStart(2, '0')})"
-}
+data class CopyrightNoticeMetaEvent(
+  override val deltaTime: Int,
+  val copyrightNotice: String
+) : Event(
+  type = EventType.Meta,
+  subType = EventSubType.CopyrightNoticeMetaEvent,
+  deltaTime = deltaTime
+)
 
-@Serializable
-enum class ControlEventType(val code: Int) {
-  NoteOff(0b1000),
-  NoteOn(0b1001),
-  PolyphonicKeyPressure(0b1010),
-  ControlChange(0b1011),
-  ProgramChange(0b1100),
-  ChannelPressure(0b1101),
-  PitchBend(0b1110);
+data class TrackNameMetaEvent(
+  override val deltaTime: Int,
+  val trackName: String
+) : Event(
+  type = EventType.Meta,
+  subType = EventSubType.TrackNameMetaEvent,
+  deltaTime = deltaTime
+)
 
-  companion object {
-    fun fromCode(code: Int): ControlEventType =
-      entries.find { it.code == code } ?: throw IllegalArgumentException(
-        "Unknown control event type: ${code.toString(16)}"
-      )
-  }
+data class InstrumentNameMetaEvent(
+  override val deltaTime: Int,
+  val instrumentName: String
+) : Event(
+  type = EventType.Meta,
+  subType = EventSubType.InstrumentNameMetaEvent,
+  deltaTime = deltaTime
+)
 
-  override fun toString() = "${this.name}(0b${code.toString(2).padStart(4, '0')})"
-}
+data class LyricMetaEvent(
+  override val deltaTime: Int,
+  val lyric: String
+) : Event(
+  type = EventType.Meta,
+  subType = EventSubType.LyricMetaEvent,
+  deltaTime = deltaTime
+)
 
-@Serializable
-open class Event
+data class MarkerMetaEvent(
+  override val deltaTime: Int,
+  val marker: String
+) : Event(
+  type = EventType.Meta,
+  subType = EventSubType.MarkerMetaEvent,
+  deltaTime = deltaTime
+)
 
-@Serializable
-open class MetaEvent : Event()
+data class CuePointMetaEvent(
+  override val deltaTime: Int,
+  val cuePoint: String
+) : Event(
+  type = EventType.Meta,
+  subType = EventSubType.CuePointMetaEvent,
+  deltaTime = deltaTime
+)
 
-@Serializable
-open class ControlEvent() : Event()
-
-open class SysExEvent(val deltaTime: Int, data: ByteArray) : Event()
-
-@Serializable
-data class SequenceNumberMetaEvent(val metaEventType: Int, val deltaTime: Int, val sequenceNumber: Int) : MetaEvent()
-
-@Serializable
-data class TextEventMetaEvent(val metaEventType: Int, val deltaTime: Int, val textData: String) : MetaEvent()
-
-@Serializable
-data class CopyrightNoticeMetaEvent(val metaEventType: Int, val deltaTime: Int, val textData: String) : MetaEvent()
-
-@Serializable
-data class TrackNameMetaEvent(val metaEventType: Int, val deltaTime: Int, val textData: String) : MetaEvent()
-
-@Serializable
-data class InstrumentNameMetaEvent(val metaEventType: Int, val deltaTime: Int, val textData: String) : MetaEvent()
-
-@Serializable
-data class LyricMetaEvent(val metaEventType: Int, val deltaTime: Int, val textData: String) : MetaEvent()
-
-@Serializable
-data class MarkerMetaEvent(val metaEventType: Int, val deltaTime: Int, val textData: String) : MetaEvent()
-
-@Serializable
-data class CuePointMetaEvent(val metaEventType: Int, val deltaTime: Int, val textData: String) : MetaEvent()
-
-@Serializable
-data class TimeSignatureMetaEvent(
-  val metaEventType: Int,
-  val deltaTime: Int,
-  val upperSignature: Int,
-  val powerOfTwoToLowerValue: Int,
-  val nMidiClocksInMetronomeClick: Int,
-  val nMidiClocksOf32ndNotesIn24MidiClocks: Int
-) : MetaEvent()
-
-@Serializable
-data class SetTempoMetaEvent(val metaEventType: Int, val deltaTime: Int, val tempoInMicroseconds: Int) : MetaEvent()
-
-@Serializable
-data class SmpteOffsetMetaEvent(
-  val metaEventType: Int,
-  val deltaTime: Int,
-  val byte1: Int,
-  val byte2: Int,
-  val byte3: Int,
-  val byte4: Int,
-  val byte5: Int
-) : MetaEvent()
-
-@Serializable
-data class KeySignatureMetaEvent(
-  val metaEventType: Int,
-  val deltaTime: Int,
-  val byte1: Int,
-  val byte2: Int
-) : MetaEvent()
-
-@Serializable
 data class MidiChannelPrefixMetaEvent(
-  val metaEventType: Int,
-  val deltaTime: Int,
-  val currentEffectiveMidiChannel: Int
-) : MetaEvent()
+  override val deltaTime: Int,
+  val midiChannelPrefix: Int
+) : Event(
+  type = EventType.Meta,
+  subType = EventSubType.MidiChannelPrefixMetaEvent,
+  deltaTime = deltaTime
+)
 
-@Serializable
-data class SequencerSpecificMetaEvent(val metaEventType: Int, val deltaTime: Int, val bytes: List<Int>) : MetaEvent()
+data class SetTempoMetaEvent(
+  override val deltaTime: Int,
+  val tempo: Int
+) : Event(
+  type = EventType.Meta,
+  subType = EventSubType.SetTempoMetaEvent,
+  deltaTime = deltaTime
+)
 
-@Serializable
-data class EndOfTrackMetaEvent(val metaEventType: Int, val deltaTime: Int, val bytes: List<Int>) : MetaEvent()
+data class SmpteOffsetMetaEvent(
+  override val deltaTime: Int,
+  val hour: Int,
+  val minute: Int,
+  val second: Int,
+  val frame: Int,
+  val subframe: Int
+) : Event(
+  type = EventType.Meta,
+  subType = EventSubType.SmpteOffsetMetaEvent,
+  deltaTime = deltaTime
+)
 
-@Serializable
-data class UnkownMetaEvent(val metaEventType: Int, val deltaTime: Int, val bytes: List<Int>) : MetaEvent()
+data class TimeSignatureMetaEvent(
+  override val deltaTime: Int,
+  val numerator: Int,
+  val denominator: Int,
+  val clocksPerTick: Int,
+  val notesPer24Clocks: Int
+) : Event(
+  type = EventType.Meta,
+  subType = EventSubType.TimeSignatureMetaEvent,
+  deltaTime = deltaTime
+)
 
-@Serializable
-data class ProgramChangeControlEvent(
-  val controlEventType: Int,
-  val deltaTime: Int,
-  val targetChannel: Int,
-  val targetInstrument: Int
-) : ControlEvent()
+data class KeySignatureMetaEvent(
+  override val deltaTime: Int,
+  val key: Int,
+  val scale: Int
+) : Event(
+  type = EventType.Meta,
+  subType = EventSubType.KeySignatureMetaEvent,
+  deltaTime = deltaTime
+)
 
-@Serializable
+data class SequencerSpecificMetaEvent(
+  override val deltaTime: Int,
+  val rawData: ByteArray
+) : Event(
+  type = EventType.Meta,
+  subType = EventSubType.SequencerSpecificMetaEvent,
+  deltaTime = deltaTime
+)
+
+data class EndOfTrackMetaEvent(
+  override val deltaTime: Int
+) : Event(
+  type = EventType.Meta,
+  subType = EventSubType.EndOfTrackMetaEvent,
+  deltaTime = deltaTime
+)
+
+data class UnknownMetaEvent(
+  override val deltaTime: Int,
+  val unknownRawData: ByteArray
+) : Event(
+  type = EventType.Meta,
+  subType = EventSubType.UnknownEventSubType,
+  deltaTime = deltaTime
+)
+
 data class NoteOnControlEvent(
-  val controlEventType: Int,
-  val deltaTime: Int,
-  val targetChannel: Int,
-  val noteNumber: Int,
-  val noteVelocity: Int
-) : ControlEvent()
+  override val deltaTime: Int,
+  val channel: Int,
+  val note: Int,
+  val velocity: Int
+) : Event(
+  type = EventType.Other,
+  subType = EventSubType.NoteOnControlEvent,
+  deltaTime = deltaTime
+)
 
-@Serializable
 data class NoteOffControlEvent(
-  val controlEventType: Int,
-  val deltaTime: Int,
-  val targetChannel: Int,
-  val noteNumber: Int,
-  val noteVelocity: Int
-) : ControlEvent()
+  override val deltaTime: Int,
+  val channel: Int,
+  val note: Int,
+  val velocity: Int
+) : Event(
+  type = EventType.Other,
+  subType = EventSubType.NoteOffControlEvent,
+  deltaTime = deltaTime
+)
 
-@Serializable
 data class PolyphonicKeyPressureControlEvent(
-  val controlEventType: Int,
-  val deltaTime: Int,
-  val targetChannel: Int,
-  val noteNumber: Int,
+  override val deltaTime: Int,
+  val channel: Int,
+  val note: Int,
   val pressure: Int
-) : ControlEvent()
+) : Event(
+  type = EventType.Other,
+  subType = EventSubType.PolyphonicKeyPressureControlEvent,
+  deltaTime = deltaTime
+)
 
-@Serializable
 data class ControlChangeControlEvent(
-  val controlEventType: Int,
-  val deltaTime: Int,
-  val targetChannel: Int,
-  val controlNumber: Int,
-  val controlValue: Int
-) : ControlEvent()
+  override val deltaTime: Int,
+  val channel: Int,
+  val controller: Int,
+  val value: Int
+) : Event(
+  type = EventType.Other,
+  subType = EventSubType.ControlChangeControlEvent,
+  deltaTime = deltaTime
+)
 
-@Serializable
+data class ProgramChangeControlEvent(
+  override val deltaTime: Int,
+  val channel: Int,
+  val program: Int
+) : Event(
+  type = EventType.Other,
+  subType = EventSubType.ProgramChangeControlEvent,
+  deltaTime = deltaTime
+)
+
 data class ChannelPressureControlEvent(
-  val controlEventType: Int,
-  val deltaTime: Int,
-  val targetChannel: Int,
-  val channelPressure: Int
-) : ControlEvent()
+  override val deltaTime: Int,
+  val channel: Int,
+  val pressure: Int
+) : Event(
+  type = EventType.Other,
+  subType = EventSubType.ChannelPressureControlEvent,
+  deltaTime = deltaTime
+)
 
-@Serializable
 data class PitchBendControlEvent(
-  val controlEventType: Int,
-  val deltaTime: Int,
-  val targetChannel: Int,
-  val pitchBend: Int
-) : ControlEvent()
+  override val deltaTime: Int,
+  val channel: Int,
+  val bend: Int
+) : Event(
+  type = EventType.Other,
+  subType = EventSubType.PitchBendControlEvent,
+  deltaTime = deltaTime
+)
 
-@Serializable
+data class SysExEvent(
+  override val deltaTime: Int,
+  val sysexRawData: ByteArray
+) : Event(
+  type = EventType.SystemExclusive,
+  subType = EventSubType.UnknownEventSubType,
+  deltaTime = deltaTime
+)
+
 data class Header(
   val signature: String,
   val length: Long,
@@ -219,29 +292,20 @@ data class Header(
   val division: Int
 )
 
-@Serializable
 data class Track(
   val signature: String,
   val length: Int,
   val events: List<Event>
 ) {
-
-  /**
-   * Helper field to retrieve track name!
-   *
-   * If track doesn't have a [TrackNameMetaEvent], just leaves it empty.
-   */
   val name: String = events.filterIsInstance<TrackNameMetaEvent>().singleOrNull()?.trackName ?: ""
 }
 
-@Serializable
+@OptIn(ExperimentalUnsignedTypes::class)
 data class Midi(
   val header: Header,
   val tracks: List<Track>,
-  @Transient val rawBytes: UByteArray = UByteArray(0)
+  val rawBytes: UByteArray = UByteArray(0)
 ) {
-
-  fun dumpedRawBytes(bytesPerLine: Int = 16): String {
-    return hexDump(data = rawBytes, bytesPerLine = bytesPerLine)
-  }
+  fun dumpedRawBytes(bytesPerLine: Int = 16): String =
+    hexDump(data = rawBytes, bytesPerLine = bytesPerLine)
 }
