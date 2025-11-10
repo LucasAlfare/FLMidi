@@ -46,3 +46,16 @@ fun Reader.readVariableLengthValue(): Int {
     if ((currentByte ushr 7) == 0) return resultNumber
   }
 }
+
+fun writeVariableLengthQuantity(value: Int): ByteArray {
+  var buffer = value and 0x7F
+  var v = value shr 7
+  val out = mutableListOf<Byte>()
+  while (v > 0) {
+    out.add(0, (buffer or 0x80).toByte())
+    buffer = v and 0x7F
+    v = v shr 7
+  }
+  out.add(0, buffer.toByte())
+  return out.toByteArray()
+}

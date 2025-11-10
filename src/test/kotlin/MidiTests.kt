@@ -114,10 +114,10 @@ class MidiTests {
   @Test
   fun `test header signatures`() {
     val midi0 = readMidiFromBytes(format0Midi)
-    assertEquals(expected = "MThd", midi0.header.signature)
+    assertEquals(expected = "MThd", midi0.header.chunkType)
 
     val midi1 = readMidiFromBytes(format1Midi)
-    assertEquals(expected = "MThd", midi1.header.signature)
+    assertEquals(expected = "MThd", midi1.header.chunkType)
   }
 
   /**
@@ -193,11 +193,11 @@ class MidiTests {
   @Test
   fun `test MIDIs tracks signatures`() {
     val midi0 = readMidiFromBytes(format0Midi)
-    assertEquals(expected = "MTrk", actual = midi0.tracks.first().signature)
+    assertEquals(expected = "MTrk", actual = midi0.tracks.first().type)
 
     val midi1 = readMidiFromBytes(format1Midi)
     midi1.tracks.forEach {
-      assertEquals(expected = "MTrk", actual = it.signature)
+      assertEquals(expected = "MTrk", actual = it.type)
     }
   }
 
@@ -226,7 +226,7 @@ class MidiTests {
     val midi0 = readMidiFromBytes(format0Midi)
     val events = midi0.tracks.first().events
     assertTrue(events.isNotEmpty())
-    assertTrue(events.size == 14)
+    assertEquals(events.size, 14)
   }
 
   /**
@@ -241,89 +241,89 @@ class MidiTests {
     var e = events[0]
     assertTrue(e is TimeSignatureMetaEvent)
     assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 4, actual = e.numerator)
-    assertEquals(expected = 4, actual = e.denominator)
-    assertEquals(expected = 24, actual = e.clocksPerTick)
-    assertEquals(expected = 8, actual = e.notesPer24Clocks)
+    assertEquals(expected = 4, actual = e.upperSignature)
+    assertEquals(expected = 4, actual = e.powerOfTwoToLowerValue)
+    assertEquals(expected = 24, actual = e.nMidiClocksInMetronomeClick)
+    assertEquals(expected = 8, actual = e.nMidiClocksOf32ndNotesIn24MidiClocks)
 
     e = events[1]
     assertTrue(e is SetTempoMetaEvent)
     assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 500000, actual = e.tempo)
+    assertEquals(expected = 500000, actual = e.tempoInMicroseconds)
 
     e = events[2]
     assertTrue(e is ProgramChangeControlEvent)
     assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 1 - 1, actual = e.channel)
-    assertEquals(expected = 5, actual = e.program)
+    assertEquals(expected = 1 - 1, actual = e.targetChannel)
+    assertEquals(expected = 5, actual = e.targetInstrument)
 
     e = events[3]
     assertTrue(e is ProgramChangeControlEvent)
     assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 2 - 1, actual = e.channel)
-    assertEquals(expected = 46, actual = e.program)
+    assertEquals(expected = 2 - 1, actual = e.targetChannel)
+    assertEquals(expected = 46, actual = e.targetInstrument)
 
     e = events[4]
     assertTrue(e is ProgramChangeControlEvent)
     assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 3 - 1, actual = e.channel)
-    assertEquals(expected = 70, actual = e.program)
+    assertEquals(expected = 3 - 1, actual = e.targetChannel)
+    assertEquals(expected = 70, actual = e.targetInstrument)
 
     e = events[5]
     assertTrue(e is NoteOnControlEvent)
     assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 3 - 1, actual = e.channel)
-    assertEquals(expected = 48, actual = e.note) // note C3
-    assertEquals(expected = 96, actual = e.velocity) // velocity "forte"
+    assertEquals(expected = 3 - 1, actual = e.targetChannel)
+    assertEquals(expected = 48, actual = e.noteNumber) // note C3
+    assertEquals(expected = 96, actual = e.noteVelocity) // velocity "forte"
 
     e = events[6]
     assertTrue(e is NoteOnControlEvent)
     assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 3 - 1, actual = e.channel)
-    assertEquals(expected = 60, actual = e.note) // note C4
-    assertEquals(expected = 96, actual = e.velocity) // velocity "forte"
+    assertEquals(expected = 3 - 1, actual = e.targetChannel)
+    assertEquals(expected = 60, actual = e.noteNumber) // note C4
+    assertEquals(expected = 96, actual = e.noteVelocity) // velocity "forte"
 
     e = events[7]
     assertTrue(e is NoteOnControlEvent)
     assertEquals(expected = 96, actual = e.deltaTime)
-    assertEquals(expected = 2 - 1, actual = e.channel)
-    assertEquals(expected = 67, actual = e.note) // note G4
-    assertEquals(expected = 64, actual = e.velocity) // velocity "mezzo-forte"
+    assertEquals(expected = 2 - 1, actual = e.targetChannel)
+    assertEquals(expected = 67, actual = e.noteNumber) // note G4
+    assertEquals(expected = 64, actual = e.noteVelocity) // velocity "mezzo-forte"
 
     e = events[8]
     assertTrue(e is NoteOnControlEvent)
     assertEquals(expected = 96, actual = e.deltaTime)
-    assertEquals(expected = 1 - 1, actual = e.channel)
-    assertEquals(expected = 76, actual = e.note) // note E5
-    assertEquals(expected = 32, actual = e.velocity) // velocity "piano"
+    assertEquals(expected = 1 - 1, actual = e.targetChannel)
+    assertEquals(expected = 76, actual = e.noteNumber) // note E5
+    assertEquals(expected = 32, actual = e.noteVelocity) // velocity "piano"
 
     e = events[9]
     assertTrue(e is NoteOffControlEvent)
     assertEquals(expected = 192, actual = e.deltaTime)
-    assertEquals(expected = 3 - 1, actual = e.channel)
-    assertEquals(expected = 48, actual = e.note) // note C3
-    assertEquals(expected = 64, actual = e.velocity) // velocity "standard"
+    assertEquals(expected = 3 - 1, actual = e.targetChannel)
+    assertEquals(expected = 48, actual = e.noteNumber) // note C3
+    assertEquals(expected = 64, actual = e.noteVelocity) // velocity "standard"
 
     e = events[10]
     assertTrue(e is NoteOffControlEvent)
     assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 3 - 1, actual = e.channel)
-    assertEquals(expected = 60, actual = e.note) // note C4
-    assertEquals(expected = 64, actual = e.velocity) // velocity "standard"
+    assertEquals(expected = 3 - 1, actual = e.targetChannel)
+    assertEquals(expected = 60, actual = e.noteNumber) // note C4
+    assertEquals(expected = 64, actual = e.noteVelocity) // velocity "standard"
 
     e = events[11]
     assertTrue(e is NoteOffControlEvent)
     assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 2 - 1, actual = e.channel)
-    assertEquals(expected = 67, actual = e.note) // note G4
-    assertEquals(expected = 64, actual = e.velocity) // velocity "standard"
+    assertEquals(expected = 2 - 1, actual = e.targetChannel)
+    assertEquals(expected = 67, actual = e.noteNumber) // note G4
+    assertEquals(expected = 64, actual = e.noteVelocity) // velocity "standard"
 
     e = events[12]
     assertTrue(e is NoteOffControlEvent)
     assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 1 - 1, actual = e.channel)
-    assertEquals(expected = 76, actual = e.note) // note E5
-    assertEquals(expected = 64, actual = e.velocity) // velocity "standard"
+    assertEquals(expected = 1 - 1, actual = e.targetChannel)
+    assertEquals(expected = 76, actual = e.noteNumber) // note E5
+    assertEquals(expected = 64, actual = e.noteVelocity) // velocity "standard"
 
     e = events[13]
     assertTrue(e is EndOfTrackMetaEvent)
@@ -348,39 +348,39 @@ class MidiTests {
     var e = tracks[0].events[0]
     assertTrue(e is TimeSignatureMetaEvent)
     assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 4, actual = e.numerator)
-    assertEquals(expected = 4, actual = e.denominator)
-    assertEquals(expected = 24, actual = e.clocksPerTick)
-    assertEquals(expected = 8, actual = e.notesPer24Clocks)
+    assertEquals(expected = 4, actual = e.upperSignature)
+    assertEquals(expected = 4, actual = e.powerOfTwoToLowerValue)
+    assertEquals(expected = 24, actual = e.nMidiClocksInMetronomeClick)
+    assertEquals(expected = 8, actual = e.nMidiClocksOf32ndNotesIn24MidiClocks)
 
     e = tracks[0].events[1]
     assertTrue(e is SetTempoMetaEvent)
-    assertEquals(expected = 0x07A120, actual = e.tempo)
-
+    assertEquals(expected = 0x07A120, actual = e.tempoInMicroseconds)
+//
     e = tracks[0].events[2]
     assertTrue(e is EndOfTrackMetaEvent)
     assertEquals(expected = 384, actual = e.deltaTime)
-
+//
     // track 1 events
     e = tracks[1].events[0]
     assertTrue(e is ProgramChangeControlEvent)
     assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 0, actual = e.channel)
-    assertEquals(expected = 5, actual = e.program)
-
+    assertEquals(expected = 0, actual = e.targetChannel)
+    assertEquals(expected = 5, actual = e.targetInstrument)
+//
     e = tracks[1].events[1]
     assertTrue(e is NoteOnControlEvent)
     assertEquals(expected = 192, actual = e.deltaTime)
-    assertEquals(expected = 0, actual = e.channel)
-    assertEquals(expected = 76, actual = e.note) // note E5
-    assertEquals(expected = 32, actual = e.velocity)
-
+    assertEquals(expected = 0, actual = e.targetChannel)
+    assertEquals(expected = 76, actual = e.noteNumber) // note E5
+    assertEquals(expected = 32, actual = e.noteVelocity)
+//
     e = tracks[1].events[2]
     assertTrue(e is NoteOnControlEvent)
     assertEquals(expected = 192, actual = e.deltaTime)
-    assertEquals(expected = 0, actual = e.channel)
-    assertEquals(expected = 76, actual = e.note)
-    assertEquals(expected = 0, actual = e.velocity) // note on with velocity 0 means same as note off
+    assertEquals(expected = 0, actual = e.targetChannel)
+    assertEquals(expected = 76, actual = e.noteNumber)
+    assertEquals(expected = 0, actual = e.noteVelocity) // note on with velocity 0 means same as note off
 
     e = tracks[1].events[3]
     assertTrue(e is EndOfTrackMetaEvent)
@@ -390,22 +390,22 @@ class MidiTests {
     e = tracks[2].events[0]
     assertTrue(e is ProgramChangeControlEvent)
     assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 1, actual = e.channel)
-    assertEquals(expected = 46, actual = e.program)
+    assertEquals(expected = 1, actual = e.targetChannel)
+    assertEquals(expected = 46, actual = e.targetInstrument)
 
     e = tracks[2].events[1]
     assertTrue(e is NoteOnControlEvent)
     assertEquals(expected = 96, actual = e.deltaTime)
-    assertEquals(expected = 1, actual = e.channel)
-    assertEquals(expected = 67, actual = e.note) // note G4
-    assertEquals(expected = 64, actual = e.velocity)
+    assertEquals(expected = 1, actual = e.targetChannel)
+    assertEquals(expected = 67, actual = e.noteNumber) // note G4
+    assertEquals(expected = 64, actual = e.noteVelocity)
 
     e = tracks[2].events[2]
     assertTrue(e is NoteOnControlEvent)
     assertEquals(expected = 288, actual = e.deltaTime)
-    assertEquals(expected = 1, actual = e.channel)
-    assertEquals(expected = 67, actual = e.note)
-    assertEquals(expected = 0, actual = e.velocity) // note on with velocity 0 means same as note off
+    assertEquals(expected = 1, actual = e.targetChannel)
+    assertEquals(expected = 67, actual = e.noteNumber)
+    assertEquals(expected = 0, actual = e.noteVelocity) // note on with velocity 0 means same as note off
 
     e = tracks[2].events[3]
     assertTrue(e is EndOfTrackMetaEvent)
@@ -415,36 +415,36 @@ class MidiTests {
     e = tracks[3].events[0]
     assertTrue(e is ProgramChangeControlEvent)
     assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 2, actual = e.channel)
-    assertEquals(expected = 70, actual = e.program)
+    assertEquals(expected = 2, actual = e.targetChannel)
+    assertEquals(expected = 70, actual = e.targetInstrument)
 
     e = tracks[3].events[1]
     assertTrue(e is NoteOnControlEvent)
     assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 2, actual = e.channel)
-    assertEquals(expected = 48, actual = e.note) // note C3
-    assertEquals(expected = 96, actual = e.velocity)
+    assertEquals(expected = 2, actual = e.targetChannel)
+    assertEquals(expected = 48, actual = e.noteNumber) // note C3
+    assertEquals(expected = 96, actual = e.noteVelocity)
 
     e = tracks[3].events[2]
     assertTrue(e is NoteOnControlEvent)
     assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 2, actual = e.channel)
-    assertEquals(expected = 60, actual = e.note) // note C4
-    assertEquals(expected = 96, actual = e.velocity)
+    assertEquals(expected = 2, actual = e.targetChannel)
+    assertEquals(expected = 60, actual = e.noteNumber) // note C4
+    assertEquals(expected = 96, actual = e.noteVelocity)
 
     e = tracks[3].events[3]
     assertTrue(e is NoteOnControlEvent)
     assertEquals(expected = 384, actual = e.deltaTime)
-    assertEquals(expected = 2, actual = e.channel)
-    assertEquals(expected = 48, actual = e.note)
-    assertEquals(expected = 0, actual = e.velocity) // note on with velocity 0 means same as note off
+    assertEquals(expected = 2, actual = e.targetChannel)
+    assertEquals(expected = 48, actual = e.noteNumber)
+    assertEquals(expected = 0, actual = e.noteVelocity) // note on with velocity 0 means same as note off
 
     e = tracks[3].events[4]
     assertTrue(e is NoteOnControlEvent)
     assertEquals(expected = 0, actual = e.deltaTime)
-    assertEquals(expected = 2, actual = e.channel)
-    assertEquals(expected = 60, actual = e.note)
-    assertEquals(expected = 0, actual = e.velocity) // note on with velocity 0 means same as note off
+    assertEquals(expected = 2, actual = e.targetChannel)
+    assertEquals(expected = 60, actual = e.noteNumber)
+    assertEquals(expected = 0, actual = e.noteVelocity) // note on with velocity 0 means same as note off
 
     e = tracks[3].events[5]
     assertTrue(e is EndOfTrackMetaEvent)
